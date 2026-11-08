@@ -8,7 +8,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 1. **Jedes neue Feature und jede Änderung muss auch im Koop-Multiplayer funktionieren** (bis zu 4 Spieler).
    Für jede neue Aktion klären: Sehen die anderen Spieler sie? Wer ist zuständig (Host oder jeder selbst)?
    Gibt es Sperren (z. B. Mystery Box, Schmiede)? Doppelter Schaden ausgeschlossen?
-2. Hauptmenü: Karte „NEU IN DER BETA“ (`.mm-news`) bei größeren Neuerungen aktualisieren; Tastenbelegung (`#ctrlPanel`) bei neuen Tasten ergänzen.
+2. Hauptmenü: Liste `MM_NEWS` (Hauptmenü „NEU IN DER BETA“, zufällig gemischt) bei größeren Neuerungen ergänzen – sachlich formulieren, keine privaten Infos; Tastenbelegung (`#ctrlPanel`) bei neuen Tasten ergänzen.
 2b. Benutzeroberfläche auf **Deutsch**, gute Laptop-Performance, poliertes Aussehen, keine fremden geschützten Inhalte.
 3. Jede Version: `<title>` („Deadline Beta X.Y“), `<div class="ver">` („BETA X.Y“ – das Spiel ist bis zum späteren Full Release eine Beta) und `GAME_VER` hochzählen, Kopie als `/home/user/DeadlineX.Y.html` ablegen, committen und pushen.
 
@@ -27,6 +27,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Zombie-Snapshot `s`: Einträge `[nid, x, z, ry, sichtbar, bossAktion, bossLeben 0–1, Statusbits 1=gefroren 2=brennt 4=tanzt 8=zaubert 16=stürmt 32=getroffen, Sprunghöhe airY]`. Gast-Treffer (`hit`) tragen `fx` (Eis/Feuer/Element) – Effekte und Brennschaden rechnet nur der Host.
 - Zombie-Geräusche aus der KI (`ZSND`-Liste) gehen als `zsnd` an die Gäste; `NET.zAI` ist während der Zombie-KI gesetzt.
 - Beute (Munition/Rüstung/Medipack/Schrott) würfelt nur der Host (`pu`), Aufheben meldet `pc` – wer zuerst kommt, bekommt sie.
+- Spielregeln: Einzelspieler-Profil (`uw_feats`/`uw_cfg`) und Koop-Lobby-Profil (`uw_feats_coop`/`uw_cfg_coop`). Der Host stellt das Lobby-Profil im KOOP-Menü ein (`editCoopRules`), es wird beim Start mit `start` (Felder `F`, `C`) an alle verteilt (`netProfileApply`) und danach zurückgesetzt (`netProfileRestore`). Grafik/HUD/Ton bleiben persönlich. Speichern immer über `saveFeats`/`saveCfg`.
 - Spieler-Zustand geht über `netSendState` (`p`-Nachricht); neue sichtbare Zustände dort ergänzen und in `netAvatarOne` darstellen.
 
 ## Cheat-/Admin-Passwort
