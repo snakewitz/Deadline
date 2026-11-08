@@ -62,6 +62,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Box-Standorte (4.14): Runenkreise `buildBoxSigils` (aktueller Platz golden).
 - Spawns (4.15): Rand-Spawns halten Abstand zu allen lebenden Spielern (`mqAlive`), sonst wird der entfernteste von 30 Versuchen genommen.
 - Quest-Bosse fair halten (4.15): Angriffe mit Teleport immer sichtbar vor dem Spieler und mit Warnkreis (`qCircle`), kein Sofortschaden.
+- Ducken (4.16): C halten (`crouch`, Tempo ×0,45, Streuung ×0,7, `camLow` .62); Rutschen nur noch aus dem Sprint. Im `p`-Feld `an` Bit 512, Avatar `av.crA`.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
