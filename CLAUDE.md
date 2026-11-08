@@ -49,6 +49,9 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 
 - Leistung (4.9): Neue Objekte mit vielen Einzelteilen nach dem Bau mit `mergeGroup(g, keep)` pro Material zusammenfassen (animierte Teile in `keep`). Nach dem Kartenaufbau werden alle Shader vorab übersetzt (`NET.precompile`). Die FPS-Anzeige (Feature „FPS“) zeigt zur Fehlersuche längstes Bild, Shader-Anzahl und Zeichenaufrufe.
 - Leistung (4.11): `Object3D.updateMatrixWorld` ist so gepatcht, dass unsichtbare Teilbäume nach der ersten Berechnung übersprungen werden (Positionen dort nur über `getWorldPosition`/`updateWorldMatrix` lesen, nicht direkt `matrixWorld`). Auf schwachen Laptops ist der Prozessor der Engpass (Three.js-Vorbereitung der Szene), nicht die Grafikkarte.
+- Schaden in Menüs (4.12): Im Multiplayer wirkt `hurt` auch in Shop/Inventar/Pause usw. (`MENU_ST`); wer dabei zu Boden geht, verlässt das Menü automatisch. Im Einzelspieler pausieren Menüs weiterhin.
+- Hinweis bei bewusstlosem/ausgeschiedenem Mitspieler: `netDownNotice` (aus der `p`-Nachricht).
+- Admin (4.12): „Admin-Modus beenden“ im Hauptmenü-Profil und im Admin-Panel (`adminOff`).
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
