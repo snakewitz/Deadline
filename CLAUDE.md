@@ -33,6 +33,9 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Ping (4.3): `pingDo` → `ping`-Nachricht (Position, Art `zombie|item|loc`, Text, Zombie-`n` = nid); pro Spieler eine Markierung.
 - Zuschauen (4.3): ausgeschieden (`NET.meDead`) → `specCam` folgt einem lebenden Mitspieler, Linksklick wechselt.
 - Später einsteigen (4.3): `netJoinable` erlaubt Beitritt während `NET.inGame`; Host schickt `netLateSync` (`start` mit `late`, offene Tore, zerstörte Objekte, Zombies `zs`, Beute, Power-ups, laufendes Event). Neue Zustände, die ein Spätstarter kennen muss, dort ergänzen. Gäste sichern ihren Stand in `sessionStorage` (`uw_rejoin`, per Seed) und bekommen ihn beim Wiederbeitritt zurück.
+- Erfolge (4.4): Liste `ACH`, freischalten mit `achGet(id)` (gesperrt bei Admin-Funktionen), Prüfungen in `achTick`; andere sehen eine Chat-Meldung (`ach`).
+- Kosmetik & Abzeichen (4.4): `COS` (Kopf/Gesicht/Rücken, frei über Level/Erfolge), eigene Auswahl `myCos()`; Austausch per `cos` beim Beitritt und bei Änderung, Darstellung über `avatarCos` (auch Emote-Figur und 3D-Vorschau).
+- Team-Auswertung (4.4): `p` enthält `tm` = [Kopfschüsse, Wiederbelebungen, am Boden, verdient, Schaden]; `netTeamTable` vergibt Titel.
 - Spieler-Zustand geht über `netSendState` (`p`-Nachricht); neue sichtbare Zustände dort ergänzen und in `netAvatarOne` darstellen.
 
 ## Cheat-/Admin-Passwort
