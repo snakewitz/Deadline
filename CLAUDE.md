@@ -52,6 +52,8 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Schaden in Menüs (4.12): Im Multiplayer wirkt `hurt` auch in Shop/Inventar/Pause usw. (`MENU_ST`); wer dabei zu Boden geht, verlässt das Menü automatisch. Im Einzelspieler pausieren Menüs weiterhin.
 - Hinweis bei bewusstlosem/ausgeschiedenem Mitspieler: `netDownNotice` (aus der `p`-Nachricht).
 - Admin (4.12): „Admin-Modus beenden“ im Hauptmenü-Profil und im Admin-Panel (`adminOff`).
+- Mystery Box (4.13): 6 Standorte je Karte (`BOX_SPOTS`, `netReseed(4)`), Start zufällig; nach einem Dreh 20 % Chance (`BOX_MOVE_CHANCE`) zum Umzug – entscheidet nur Host/Einzelspieler (`boxMaybeMove`), verteilt per `bxm`. Positionen immer über `BOX_POS` lesen.
+- Zweite Chance (4.13): Waffen bleiben, alle Perks gehen verloren.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
