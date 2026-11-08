@@ -8,7 +8,8 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 1. **Jedes neue Feature und jede Änderung muss auch im Koop-Multiplayer funktionieren** (bis zu 4 Spieler).
    Für jede neue Aktion klären: Sehen die anderen Spieler sie? Wer ist zuständig (Host oder jeder selbst)?
    Gibt es Sperren (z. B. Mystery Box, Schmiede)? Doppelter Schaden ausgeschlossen?
-2. Benutzeroberfläche auf **Deutsch**, gute Laptop-Performance, poliertes Aussehen, keine fremden geschützten Inhalte.
+2. Hauptmenü: Karte „NEU IN DER BETA“ (`.mm-news`) bei größeren Neuerungen aktualisieren; Tastenbelegung (`#ctrlPanel`) bei neuen Tasten ergänzen.
+2b. Benutzeroberfläche auf **Deutsch**, gute Laptop-Performance, poliertes Aussehen, keine fremden geschützten Inhalte.
 3. Jede Version: `<title>` („Deadline Beta X.Y“), `<div class="ver">` („BETA X.Y“ – das Spiel ist bis zum späteren Full Release eine Beta) und `GAME_VER` hochzählen, Kopie als `/home/user/DeadlineX.Y.html` ablegen, committen und pushen.
 
 ## Multiplayer-Architektur (Kurzfassung)
