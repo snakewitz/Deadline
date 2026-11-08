@@ -23,6 +23,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Geräusche anderer Spieler räumlich mit `sndAt(x, z, range, mul, fn)`.
 - Verbindung: zuerst direkt (PeerJS/WebRTC); klappt das nach 5 s nicht, über den eigenen Relay-Server (`server/`, Cloudflare Worker + Durable Objects, `NET_RELAY` = wss://deadline-relay.snakewitz.workers.dev; deployen: `cd server && CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=4a3a3c21898f86b6274e4af1751b6400 npx wrangler deploy`).
   Relay-Verkehr wird gebündelt (max. 15 Pakete/s pro Spieler, `p`/`s` werden zusammengefasst) – wichtig fürs Gratis-Kontingent (eingehende WS-Nachrichten zählen 20:1).
+  Seit 4.8: über den Server werden `p`/`s` im 66-ms-Takt erzeugt und sofort danach verschickt (`rlyTick` in Echtzeit, ≥ 64 ms Abstand); die Glättung (`netZDelay`, `P.jit`) wächst mit der gemessenen Schwankung. Nicht wieder auf festen Bild-Takt umstellen – das erzeugt Paketlücken und Ruckeln.
   Öffentliche Lobbys kommen vom Server (`/lobbies`). Lokal testen: `cd server && npx wrangler dev`, Spiel mit `?relay=ws://127.0.0.1:8787` öffnen.
 - Zombie-Snapshot `s`: Einträge `[nid, x, z, ry, sichtbar, bossAktion, bossLeben 0–1, Statusbits 1=gefroren 2=brennt 4=tanzt 8=zaubert 16=stürmt 32=getroffen, Sprunghöhe airY]`. Gast-Treffer (`hit`) tragen `fx` (Eis/Feuer/Element) – Effekte und Brennschaden rechnet nur der Host.
 - Zombie-Geräusche aus der KI (`ZSND`-Liste) gehen als `zsnd` an die Gäste; `NET.zAI` ist während der Zombie-KI gesetzt.
