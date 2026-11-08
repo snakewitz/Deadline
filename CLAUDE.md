@@ -36,6 +36,9 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Erfolge (4.4): Liste `ACH`, freischalten mit `achGet(id)` (gesperrt bei Admin-Funktionen), Prüfungen in `achTick`; andere sehen eine Chat-Meldung (`ach`).
 - Kosmetik & Abzeichen (4.4): `COS` (Kopf/Gesicht/Rücken, frei über Level/Erfolge), eigene Auswahl `myCos()`; Austausch per `cos` beim Beitritt und bei Änderung, Darstellung über `avatarCos` (auch Emote-Figur und 3D-Vorschau).
 - Team-Auswertung (4.4): `p` enthält `tm` = [Kopfschüsse, Wiederbelebungen, am Boden, verdient, Schaden]; `netTeamTable` vergibt Titel.
+- Hauptquests (4.5): Definitionen `MQD` (Schritte je Karte), Objekte `MQO` (mit gemeinsamem Zufall `netReseed(3)` gebaut), Stand `MQS`. Nur Host/Einzelspieler ändert den Stand (`mqDo`, `mqSet` → `qs` an alle); Gäste melden Aktionen per `qa`, Effekte per `qfx`. Spätstarter bekommen `qs` in `netLateSync`.
+- Quest-Bosse: Einträge `qb_<karte>` in `MAPBOSS` (`qb:1`), KI `qBossAI`, Angriffe in `QATK` nur über die gewrappten Gefahren-Funktionen (`zCircle`/`hzWave`/… + `hurtAt`), damit Gäste sie sehen. Schildphasen bei 66 %/33 % mit `qunit`-Siegeln. `zs` trägt `bk` (Bossart) und `qc` (Kristallträger). Wellen pausieren, solange `MQS.boss`.
+- Wunderwaffen (4.5): `wsoul`, `wfrost`, `wneon`, `wbat` (`r:'wonder'`, `wonder`-Effekt). Jeder Spieler holt seine eigene am Sockel. Statuseffekte (Eis/Neon) setzt nur der Host – Gäste schicken `fx:'wf:…'` im `hit`.
 - Spieler-Zustand geht über `netSendState` (`p`-Nachricht); neue sichtbare Zustände dort ergänzen und in `netAvatarOne` darstellen.
 
 ## Cheat-/Admin-Passwort
