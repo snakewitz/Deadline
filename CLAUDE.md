@@ -42,6 +42,10 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Wunderwaffen (4.5): `wsoul`, `wfrost`, `wneon`, `wbat` (`r:'wonder'`, `wonder`-Effekt). Jeder Spieler holt seine eigene am Sockel. Statuseffekte (Eis/Neon) setzt nur der Host – Gäste schicken `fx:'wf:…'` im `hit`.
 - Spieler-Zustand geht über `netSendState` (`p`-Nachricht); neue sichtbare Zustände dort ergänzen und in `netAvatarOne` darstellen.
 
+- Waffenrad (4.7): zeigt die Waffenplätze (`ownedList()`, mind. 5 Segmente), nicht mehr Kategorien.
+- Krähen (`hzCrow`) haben eine unsichtbare Trefferbox (`userData.dest = {crow}`), Treffer laufen über `damageDest` – jeder Spieler schießt seine eigenen Krähen ab (sie verfolgen nur ihn).
+- Admin (4.7): „Spielstand zurücksetzen“ im Hauptmenü-Profil löscht `PROGRESS_KEYS` – neue dauerhafte Fortschritts-Speicher dort eintragen.
+
 ## Cheat-/Admin-Passwort
 
 Im Code steht nur ein Fingerabdruck (`CHEAT_SALT`, `CHEAT_HASH`, 40 000-fach gestrecktes SHA-256, Funktion `pwDerive`). Neues Passwort: Hash mit derselben Funktion in Node berechnen und beide Konstanten ersetzen – das Klartext-Passwort nie committen.
