@@ -47,6 +47,9 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Krähen (`hzCrow`) haben eine unsichtbare Trefferbox (`userData.dest = {crow}`), Treffer laufen über `damageDest` – jeder Spieler schießt seine eigenen Krähen ab (sie verfolgen nur ihn).
 - Admin (4.7): „Spielstand zurücksetzen“ im Hauptmenü-Profil löscht `PROGRESS_KEYS` – neue dauerhafte Fortschritts-Speicher dort eintragen.
 
+- Leistung (4.9): Neue Objekte mit vielen Einzelteilen nach dem Bau mit `mergeGroup(g, keep)` pro Material zusammenfassen (animierte Teile in `keep`). Nach dem Kartenaufbau werden alle Shader vorab übersetzt (`NET.precompile`). Die FPS-Anzeige (Feature „FPS“) zeigt zur Fehlersuche längstes Bild, Shader-Anzahl und Zeichenaufrufe.
+- Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
+
 ## Cheat-/Admin-Passwort
 
 Im Code steht nur ein Fingerabdruck (`CHEAT_SALT`, `CHEAT_HASH`, 40 000-fach gestrecktes SHA-256, Funktion `pwDerive`). Neues Passwort: Hash mit derselben Funktion in Node berechnen und beide Konstanten ersetzen – das Klartext-Passwort nie committen.
