@@ -25,7 +25,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   Relay-Verkehr wird gebündelt (max. 15 Pakete/s pro Spieler, `p`/`s` werden zusammengefasst) – wichtig fürs Gratis-Kontingent (eingehende WS-Nachrichten zählen 20:1).
   Seit 4.8: über den Server werden `p`/`s` im 66-ms-Takt erzeugt und sofort danach verschickt (`rlyTick` in Echtzeit, ≥ 64 ms Abstand); die Glättung (`netZDelay`, `P.jit`) wächst mit der gemessenen Schwankung. Nicht wieder auf festen Bild-Takt umstellen – das erzeugt Paketlücken und Ruckeln.
   Öffentliche Lobbys kommen vom Server (`/lobbies`). Lokal testen: `cd server && npx wrangler dev`, Spiel mit `?relay=ws://127.0.0.1:8787` öffnen.
-- Zombie-Snapshot `s`: Einträge `[nid, x, z, ry, sichtbar, bossAktion, bossLeben 0–1, Statusbits 1=gefroren 2=brennt 4=tanzt 8=zaubert 16=stürmt 32=getroffen, Sprunghöhe airY]`. Gast-Treffer (`hit`) tragen `fx` (Eis/Feuer/Element) – Effekte und Brennschaden rechnet nur der Host.
+- Zombie-Snapshot `s`: Einträge `[nid, x, z, ry, sichtbar, bossAktion, bossLeben 0–1, Statusbits 1=gefroren 2=brennt 4=tanzt 8=zaubert 16=stürmt 32=getroffen, Sprunghöhe airY, Kletterhöhe fy]`. Gast-Treffer (`hit`) tragen `fx` (Eis/Feuer/Element) – Effekte und Brennschaden rechnet nur der Host.
 - Zombie-Geräusche aus der KI (`ZSND`-Liste) gehen als `zsnd` an die Gäste; `NET.zAI` ist während der Zombie-KI gesetzt.
 - Beute (Munition/Rüstung/Medipack/Schrott) würfelt nur der Host (`pu`), Aufheben meldet `pc` – wer zuerst kommt, bekommt sie.
 - Spielregeln: Einzelspieler-Profil (`uw_feats`/`uw_cfg`) und Koop-Lobby-Profil (`uw_feats_coop`/`uw_cfg_coop`). Der Host stellt das Lobby-Profil im KOOP-Menü ein (`editCoopRules`), es wird beim Start mit `start` (Felder `F`, `C`) an alle verteilt (`netProfileApply`) und danach zurückgesetzt (`netProfileRestore`). Grafik/HUD/Ton bleiben persönlich. Speichern immer über `saveFeats`/`saveCfg`.
@@ -54,6 +54,12 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Admin (4.12): „Admin-Modus beenden“ im Hauptmenü-Profil und im Admin-Panel (`adminOff`).
 - Mystery Box (4.13): 6 Standorte je Karte (`BOX_SPOTS`, `netReseed(4)`), Start zufällig; nach einem Dreh 20 % Chance (`BOX_MOVE_CHANCE`) zum Umzug – entscheidet nur Host/Einzelspieler (`boxMaybeMove`), verteilt per `bxm`. Positionen immer über `BOX_POS` lesen.
 - Zweite Chance (4.13): Waffen bleiben, alle Perks gehen verloren.
+- Gleiche Karte (4.14): Zufall, der von der Grafikstufe abhängt (Gras, Schnee), läuft in `isoRand` (eigene Folge, verschiebt den gemeinsamen Zufall nicht); vor `curMap.build()` steht `netReseed(5)`. Platzierungen nie von `player.pos` abhängig machen (`freeSpot` nur zur Laufzeit).
+- Zweite Chance (4.14): Bosse/Quest-Boss/Siegel bleiben; Einzelspieler entfernt nur normale Zombies, Koop stößt nur weg + 3 s unverwundbar. `mqTick` ruft den Quest-Boss neu, wenn er > 3 s fehlt.
+- Puppen-Nachsync (4.14): Gast sieht im Snapshot unbekannte `nid` → `zq` an Host → Host schickt `zs` (`zsMsg`) erneut.
+- Zuschauen (4.14): Maus dreht um den Mitspieler (`player.yaw/pitch`), Mausrad = Abstand (`SPEC.d`), F = freie Kamera (`specFree`, `SPEC.fp`).
+- Parkour (4.14): `tryMantle` (Leertaste halten + vorwärts in der Luft, Kante bis 1,9 m über den Füßen), `MANT`. Hindernisse ohne Höhe bekommen ihre sichtbare Höhe (`fixColliderHeights`, nicht Tore/Box). Zombies klettern (`zClimb`, Höhe `z.fy`, Snapshot-Feld 9); Nahkampf vergleicht `TG.y - z.fy`. Schloss: oben auf Objekten Begrenzung auf `curMap.inner`, solange der Garten zu ist.
+- Box-Standorte (4.14): Runenkreise `buildBoxSigils` (aktueller Platz golden).
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
