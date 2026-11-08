@@ -30,6 +30,9 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Spielregeln: Einzelspieler-Profil (`uw_feats`/`uw_cfg`) und Koop-Lobby-Profil (`uw_feats_coop`/`uw_cfg_coop`). Der Host stellt das Lobby-Profil im KOOP-Menü ein (`editCoopRules`), es wird beim Start mit `start` (Felder `F`, `C`) an alle verteilt (`netProfileApply`) und danach zurückgesetzt (`netProfileRestore`). Grafik/HUD/Ton bleiben persönlich. Speichern immer über `saveFeats`/`saveCfg`.
 - Waffenplätze (4.2): Messer fest + `maxSlots()` Waffen (3, mit Perk `belt` 4). Reihenfolge in `slotOrder`, Liste über `ownedList()`. Neue Waffen über `giveWeapon(k)` (tauscht bei vollen Plätzen die Waffe in der Hand; `force` nur für Admin), Shop prüft `slotsFull()`. Leihwaffen (`isLoan`) dürfen das Limit überschreiten.
 - Tresor (4.2): jeder Spieler hat sein eigenes Fach (`vault.item`, nur lokal, nur für dieses Spiel); andere sehen nur Tür + Ton (`vlt`).
+- Ping (4.3): `pingDo` → `ping`-Nachricht (Position, Art `zombie|item|loc`, Text, Zombie-`n` = nid); pro Spieler eine Markierung.
+- Zuschauen (4.3): ausgeschieden (`NET.meDead`) → `specCam` folgt einem lebenden Mitspieler, Linksklick wechselt.
+- Später einsteigen (4.3): `netJoinable` erlaubt Beitritt während `NET.inGame`; Host schickt `netLateSync` (`start` mit `late`, offene Tore, zerstörte Objekte, Zombies `zs`, Beute, Power-ups, laufendes Event). Neue Zustände, die ein Spätstarter kennen muss, dort ergänzen. Gäste sichern ihren Stand in `sessionStorage` (`uw_rejoin`, per Seed) und bekommen ihn beim Wiederbeitritt zurück.
 - Spieler-Zustand geht über `netSendState` (`p`-Nachricht); neue sichtbare Zustände dort ergänzen und in `netAvatarOne` darstellen.
 
 ## Cheat-/Admin-Passwort
