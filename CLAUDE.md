@@ -60,6 +60,8 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Zuschauen (4.14): Maus dreht um den Mitspieler (`player.yaw/pitch`), Mausrad = Abstand (`SPEC.d`), F = freie Kamera (`specFree`, `SPEC.fp`).
 - Parkour (4.14): `tryMantle` (Leertaste halten + vorwärts in der Luft, Kante bis 1,9 m über den Füßen), `MANT`. Hindernisse ohne Höhe bekommen ihre sichtbare Höhe (`fixColliderHeights`, nicht Tore/Box). Zombies klettern (`zClimb`, Höhe `z.fy`, Snapshot-Feld 9); Nahkampf vergleicht `TG.y - z.fy`. Schloss: oben auf Objekten Begrenzung auf `curMap.inner`, solange der Garten zu ist.
 - Box-Standorte (4.14): Runenkreise `buildBoxSigils` (aktueller Platz golden).
+- Spawns (4.15): Rand-Spawns halten Abstand zu allen lebenden Spielern (`mqAlive`), sonst wird der entfernteste von 30 Versuchen genommen.
+- Quest-Bosse fair halten (4.15): Angriffe mit Teleport immer sichtbar vor dem Spieler und mit Warnkreis (`qCircle`), kein Sofortschaden.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
