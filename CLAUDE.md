@@ -28,6 +28,8 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Zombie-Geräusche aus der KI (`ZSND`-Liste) gehen als `zsnd` an die Gäste; `NET.zAI` ist während der Zombie-KI gesetzt.
 - Beute (Munition/Rüstung/Medipack/Schrott) würfelt nur der Host (`pu`), Aufheben meldet `pc` – wer zuerst kommt, bekommt sie.
 - Spielregeln: Einzelspieler-Profil (`uw_feats`/`uw_cfg`) und Koop-Lobby-Profil (`uw_feats_coop`/`uw_cfg_coop`). Der Host stellt das Lobby-Profil im KOOP-Menü ein (`editCoopRules`), es wird beim Start mit `start` (Felder `F`, `C`) an alle verteilt (`netProfileApply`) und danach zurückgesetzt (`netProfileRestore`). Grafik/HUD/Ton bleiben persönlich. Speichern immer über `saveFeats`/`saveCfg`.
+- Waffenplätze (4.2): Messer fest + `maxSlots()` Waffen (3, mit Perk `belt` 4). Reihenfolge in `slotOrder`, Liste über `ownedList()`. Neue Waffen über `giveWeapon(k)` (tauscht bei vollen Plätzen die Waffe in der Hand; `force` nur für Admin), Shop prüft `slotsFull()`. Leihwaffen (`isLoan`) dürfen das Limit überschreiten.
+- Tresor (4.2): jeder Spieler hat sein eigenes Fach (`vault.item`, nur lokal, nur für dieses Spiel); andere sehen nur Tür + Ton (`vlt`).
 - Spieler-Zustand geht über `netSendState` (`p`-Nachricht); neue sichtbare Zustände dort ergänzen und in `netAvatarOne` darstellen.
 
 ## Cheat-/Admin-Passwort
