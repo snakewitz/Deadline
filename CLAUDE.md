@@ -46,6 +46,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Waffenrad (4.7): zeigt die Waffenplätze (`ownedList()`, mind. 5 Segmente), nicht mehr Kategorien.
 - Krähen (`hzCrow`) haben eine unsichtbare Trefferbox (`userData.dest = {crow}`), Treffer laufen über `damageDest` – jeder Spieler schießt seine eigenen Krähen ab (sie verfolgen nur ihn).
 - Admin (4.7): „Spielstand zurücksetzen“ im Hauptmenü-Profil löscht `PROGRESS_KEYS` – neue dauerhafte Fortschritts-Speicher dort eintragen.
+- Test-Spielstand (4.21): Solange Admin aktiv ist (`SBX.on`), lesen/schreiben `store.get/set` alle `PROGRESS_KEYS` in `sessionStorage` (`sbx_<key>`, Start = Kopie des echten Stands). Admin beenden → im Hauptmenü Neuladen, Kopie wird verworfen (`showMenu` prüft das). Fortschritt nie direkt über `localStorage` schreiben.
 
 - Leistung (4.9): Neue Objekte mit vielen Einzelteilen nach dem Bau mit `mergeGroup(g, keep)` pro Material zusammenfassen (animierte Teile in `keep`). Nach dem Kartenaufbau werden alle Shader vorab übersetzt (`NET.precompile`). Die FPS-Anzeige (Feature „FPS“) zeigt zur Fehlersuche längstes Bild, Shader-Anzahl und Zeichenaufrufe.
 - Leistung (4.11): `Object3D.updateMatrixWorld` ist so gepatcht, dass unsichtbare Teilbäume nach der ersten Berechnung übersprungen werden (Positionen dort nur über `getWorldPosition`/`updateWorldMatrix` lesen, nicht direkt `matrixWorld`). Auf schwachen Laptops ist der Prozessor der Engpass (Three.js-Vorbereitung der Szene), nicht die Grafikkarte.
