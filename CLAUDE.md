@@ -64,6 +64,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Quest-Bosse fair halten (4.15): Angriffe mit Teleport immer sichtbar vor dem Spieler und mit Warnkreis (`qCircle`), kein Sofortschaden.
 - Ducken (4.16): C halten (`crouch`, Tempo ×0,45, Streuung ×0,7, `camLow` .62); Rutschen nur noch aus dem Sprint. Im `p`-Feld `an` Bit 512, Avatar `av.crA`.
 - Pause/Schließen (4.17): Esc im Pausemenü schließt es nur (`resumeGame(true)`, kein `requestPointerLock` – der Browser würde die Maus mit demselben Esc sofort wieder freigeben); weiter per Klick ins Bild. `beforeunload` fragt in Runden/Lobbys vor dem Schließen nach; Strg-Kürzel werden im Spiel abgefangen.
+- Blutmond (4.18): kein Bildschirm-Rot mehr (`#bloodTint` ungenutzt), sondern `bloodSkyTick` blendet rote Himmelskuppel (`BLOODSKY.red`), Nebel/Hintergrund, Mond/Sonne und Licht über 2,5 s ein – gesteuert nur über `evt.type === 'blood'`, daher automatisch bei allen Spielern.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
