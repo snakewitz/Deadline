@@ -75,6 +75,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Netz-Test: `?netloop&netlag=MIN-MAX` verzögert beim Gast eingehende Nachrichten zufällig (Reihenfolge bleibt).
 - Logische Platzierung (4.24): `wallSpots()` liefert Plätze vor Wänden (h ≥ 1,2 m, nicht auf Straßen/`PATHS`/Wasser, nicht in Häusern/engen Höfen, 4,5 m frei davor, `ry` = Blick nach außen). Tresor nutzt sie auch; `mqSpot` meidet Straßen/Wege und alle Box-Plätze (`nearBoxSpot`). Wege mit `pathStrip` anlegen, damit sie in `PATHS` landen.
 - Verbindung halten (4.25): Herzschlag `ka` jede Sekunde per `setInterval` (läuft auch im Hintergrund-Tab), `NET.rxT`/`P.rxT` = letzter Empfang. Gast: 8 s Stille oder `netClosed` im Spiel → `netLost` (Overlay `#recon`, Zustand `recon`, `netSaveRun`, alle 9 s `netJoinPeer(...NET.joinArgs)`, nach 30 s Aufgeben); Erfolg = `netBeginClient` (Spätstarter-Weg + `uw_rejoin`). Host: Gast 15 s stumm → entfernen. Geht der letzte Gast, bleibt die Host-Runde `inGame` (wieder beitretbar), außer der Host liegt am Boden.
+- Lauf-Animation (4.26): Schrittphase der Zombies wird aufsummiert (`z.swp += dt*Tempo`), nie `t*Tempo` – beim Gast schwankt das gemessene Tempo der Puppen (`z.nsp`, geglättet), und `t*Tempo` ließ die Beine jedes Bild springen (das war das eigentliche „Zittern beim Laufen“). Gäste bekommen beim Beitritt eine Warnung, wenn ihre Version nicht zur Host-Version passt (`welcome.ver`).
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
