@@ -53,7 +53,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Schaden in Menüs (4.12): Im Multiplayer wirkt `hurt` auch in Shop/Inventar/Pause usw. (`MENU_ST`); wer dabei zu Boden geht, verlässt das Menü automatisch. Im Einzelspieler pausieren Menüs weiterhin.
 - Hinweis bei bewusstlosem/ausgeschiedenem Mitspieler: `netDownNotice` (aus der `p`-Nachricht).
 - Admin (4.12): „Admin-Modus beenden“ im Hauptmenü-Profil und im Admin-Panel (`adminOff`).
-- Mystery Box (4.13): 6 Standorte je Karte (`BOX_SPOTS`, `netReseed(4)`), Start zufällig; nach einem Dreh 20 % Chance (`BOX_MOVE_CHANCE`) zum Umzug – entscheidet nur Host/Einzelspieler (`boxMaybeMove`), verteilt per `bxm`. Positionen immer über `BOX_POS` lesen.
+- Mystery Box (4.13/4.24): 6 feste Standorte je Karte (`BOX_SPOTS` aus `wallSpots()` + `pickSpots()` direkt nach `curMap.build()`, ohne Zufall – an Wänden, Blick nach außen, Ausrichtung `BOX_RY`), Start zufällig; nach einem Dreh 20 % Chance (`BOX_MOVE_CHANCE`) zum Umzug – entscheidet nur Host/Einzelspieler (`boxMaybeMove`), verteilt per `bxm`. Positionen immer über `BOX_POS` lesen.
 - Zweite Chance (4.13): Waffen bleiben, alle Perks gehen verloren.
 - Gleiche Karte (4.14): Zufall, der von der Grafikstufe abhängt (Gras, Schnee), läuft in `isoRand` (eigene Folge, verschiebt den gemeinsamen Zufall nicht); vor `curMap.build()` steht `netReseed(5)`. Platzierungen nie von `player.pos` abhängig machen (`freeSpot` nur zur Laufzeit).
 - Zweite Chance (4.14): Bosse/Quest-Boss/Siegel bleiben; Einzelspieler entfernt nur normale Zombies, Koop stößt nur weg + 3 s unverwundbar. `mqTick` ruft den Quest-Boss neu, wenn er > 3 s fehlt.
@@ -73,6 +73,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - HUD-Layout (4.22): `hudLayout` setzt `#mq` unter die Minikarte und `#quests` darunter; Nebenquests, die nicht über `#hudR` passen, werden ausgeblendet („+N“ im Kopf). Kleinere Bildschirme: Media-Queries am Ende des Stylesheets (≤ 820 px / ≤ 680 px Höhe). Fixierte Elemente nie über `offsetParent` auf Sichtbarkeit prüfen.
 - Zombie-Zittern bei Gästen (4.23): Ursache war Gedränge – Zombies drückten in den Vordermann und wurden von der Trennung zurückgeschoben; der Gast sieht das nur in 15 Proben/s → Zittern. Jetzt: nahe am Ziel bremst ein Zombie (×0,1), wenn direkt vor ihm einer steht; zusätzlich glättet der Host die gesendete Position/Drehung (`z.sx/sz/sr`, 80 ms, Sprünge > 2,5 m sofort). Nahkampf-Rückstoß nie lokal auf Puppen (`!z.net`) anwenden.
 - Netz-Test: `?netloop&netlag=MIN-MAX` verzögert beim Gast eingehende Nachrichten zufällig (Reihenfolge bleibt).
+- Logische Platzierung (4.24): `wallSpots()` liefert Plätze vor Wänden (h ≥ 1,2 m, nicht auf Straßen/`PATHS`/Wasser, nicht in Häusern/engen Höfen, 4,5 m frei davor, `ry` = Blick nach außen). Tresor nutzt sie auch; `mqSpot` meidet Straßen/Wege und alle Box-Plätze (`nearBoxSpot`). Wege mit `pathStrip` anlegen, damit sie in `PATHS` landen.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
