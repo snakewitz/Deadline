@@ -70,6 +70,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   Frost: Panzer ×0,12, in der Hitze (`genHot`) ×1,25; Gäste zünden per `qa` `ignite`; Schneesturm bei 55 %/22 % (Schaden per `hurtAt` außerhalb der Hitze). Neon: abgetaucht (`subY` in `qBossAnim`), Fangarme (`qunit`, schlagen per `qUnitAI`) → `qbViceStun` 10 s ×1,5. Schloss: Spiegelbilder (`qunit` mit `qillu`, `QI_FORCE`, `zs` Feld `qi`, flackern per `illuFlicker`), Blutdurst am Thron (`bp` 2 heilt, 7 % Schaden unterbricht → `bp` 3).
 - Längere Hauptquests (4.19): Schritt `defend` ist allgemein (`n` Sekunden, `fail`-Text, `back:1` = zurück zum vorigen Schritt). Frost 6 Kristalle + Maschine verteidigen, Neon 5 Kassetten + 90 s, Schloss 7 Runen + Thron verteidigen, Friedhof 4 Laternen + 60 s Ritual. `MQ_INFO`/`MQ_HINT` müssen gleich viele Einträge wie `MQD.steps` haben.
 - Musik (4.20): je Karte 23 Songs in `SONGS` (Format: `ch` = Akkord je Takt, `mel` = Noten/Dauer in 16teln, Summe = Takte × `bar`). Die 40 neuen Stücke sind eigene Kompositionen (Motiv – Variation – Wiederholung – Schluss auf dem Grundton). Musik ist persönlich, kein Netz-Sync nötig.
+- HUD-Layout (4.22): `hudLayout` setzt `#mq` unter die Minikarte und `#quests` darunter; Nebenquests, die nicht über `#hudR` passen, werden ausgeblendet („+N“ im Kopf). Kleinere Bildschirme: Media-Queries am Ende des Stylesheets (≤ 820 px / ≤ 680 px Höhe). Fixierte Elemente nie über `offsetParent` auf Sichtbarkeit prüfen.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
