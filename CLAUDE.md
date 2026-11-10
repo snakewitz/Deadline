@@ -71,6 +71,8 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Längere Hauptquests (4.19): Schritt `defend` ist allgemein (`n` Sekunden, `fail`-Text, `back:1` = zurück zum vorigen Schritt). Frost 6 Kristalle + Maschine verteidigen, Neon 5 Kassetten + 90 s, Schloss 7 Runen + Thron verteidigen, Friedhof 4 Laternen + 60 s Ritual. `MQ_INFO`/`MQ_HINT` müssen gleich viele Einträge wie `MQD.steps` haben.
 - Musik (4.20): je Karte 23 Songs in `SONGS` (Format: `ch` = Akkord je Takt, `mel` = Noten/Dauer in 16teln, Summe = Takte × `bar`). Die 40 neuen Stücke sind eigene Kompositionen (Motiv – Variation – Wiederholung – Schluss auf dem Grundton). Musik ist persönlich, kein Netz-Sync nötig.
 - HUD-Layout (4.22): `hudLayout` setzt `#mq` unter die Minikarte und `#quests` darunter; Nebenquests, die nicht über `#hudR` passen, werden ausgeblendet („+N“ im Kopf). Kleinere Bildschirme: Media-Queries am Ende des Stylesheets (≤ 820 px / ≤ 680 px Höhe). Fixierte Elemente nie über `offsetParent` auf Sichtbarkeit prüfen.
+- Zombie-Zittern bei Gästen (4.23): Ursache war Gedränge – Zombies drückten in den Vordermann und wurden von der Trennung zurückgeschoben; der Gast sieht das nur in 15 Proben/s → Zittern. Jetzt: nahe am Ziel bremst ein Zombie (×0,1), wenn direkt vor ihm einer steht; zusätzlich glättet der Host die gesendete Position/Drehung (`z.sx/sz/sr`, 80 ms, Sprünge > 2,5 m sofort). Nahkampf-Rückstoß nie lokal auf Puppen (`!z.net`) anwenden.
+- Netz-Test: `?netloop&netlag=MIN-MAX` verzögert beim Gast eingehende Nachrichten zufällig (Reihenfolge bleibt).
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
