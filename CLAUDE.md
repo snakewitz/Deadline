@@ -54,7 +54,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Hinweis bei bewusstlosem/ausgeschiedenem Mitspieler: `netDownNotice` (aus der `p`-Nachricht).
 - Admin (4.12): „Admin-Modus beenden“ im Hauptmenü-Profil und im Admin-Panel (`adminOff`).
 - Mystery Box (4.13/4.24): 6 feste Standorte je Karte (`BOX_SPOTS` aus `wallSpots()` + `pickSpots()` direkt nach `curMap.build()`, ohne Zufall – an Wänden, Blick nach außen, Ausrichtung `BOX_RY`), Start zufällig; nach einem Dreh 20 % Chance (`BOX_MOVE_CHANCE`) zum Umzug – entscheidet nur Host/Einzelspieler (`boxMaybeMove`), verteilt per `bxm`. Positionen immer über `BOX_POS` lesen.
-- Zweite Chance (4.13): Waffen bleiben, alle Perks gehen verloren.
+- Zweite Chance (4.41): nur der Perk `revive` selbst ist verbraucht – Waffen und alle anderen Perks bleiben. Zu Boden gehen im Koop (`netDown`): alle Perks weg, Waffen bleiben.
 - Gleiche Karte (4.14): Zufall, der von der Grafikstufe abhängt (Gras, Schnee), läuft in `isoRand` (eigene Folge, verschiebt den gemeinsamen Zufall nicht); vor `curMap.build()` steht `netReseed(5)`. Platzierungen nie von `player.pos` abhängig machen (`freeSpot` nur zur Laufzeit).
 - Zweite Chance (4.14): Bosse/Quest-Boss/Siegel bleiben; Einzelspieler entfernt nur normale Zombies, Koop stößt nur weg + 3 s unverwundbar. `mqTick` ruft den Quest-Boss neu, wenn er > 3 s fehlt.
 - Puppen-Nachsync (4.14): Gast sieht im Snapshot unbekannte `nid` → `zq` an Host → Host schickt `zs` (`zsMsg`) erneut.
@@ -89,6 +89,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
 - Admin-Menü (4.40): Tabs `CHEAT_TABS` (Schnell, Spieler, Waffen, Welt, Spielregeln, Gegnertypen, Fortschritt), `cheatTab`, Aufbau in `renderCheat`. Neue Admin-Funktionen in den passenden Tab einsortieren.
 - Kein „Klicken zum Weiterspielen“ mehr (4.40): `#lockHint` wird nicht mehr angezeigt, das Spiel friert ohne Maus-Fang nicht ein; ein Klick ins Bild fängt die Maus nur wieder ein. Konzertflügel (`piano`) ist nicht mehr in `BOX_POOL`/Lexikon – nur noch über das Admin-Menü (Waffen).
 - Hintergrund-Tab (4.40): Hauptschleife ist `frame(vis)`; `requestAnimationFrame` ruft sie nur bei sichtbarem Tab. Ist der Tab versteckt/minimiert und `NET.on`, treibt ein Blob-Worker (`BG.w`, 33 ms, wird nicht gedrosselt) `frame(false)` an: Logik + Netz laufen weiter, gezeichnet wird nicht (`scene.updateMatrixWorld` alle 6 Takte). Nie Spiel-Logik in den Zeichen-Teil am Ende von `frame` legen.
+- Helligkeit (4.41): Belichtung je Grafikstufe `QUAL.*.exp` (niedrig 1,45 · mittel 1,5 · hoch 1,15), gesetzt in `applyQuality` – gleicht die geringere Zahl echter Lichter aus, kostet keine Leistung.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
