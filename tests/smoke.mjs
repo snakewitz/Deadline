@@ -1,0 +1,95 @@
+// Deadline – Schnelltest (läuft vor jedem Push und automatisch auf GitHub)
+// Startet das Spiel in einem Browser ohne Bildschirm, spielt alle Karten kurz an, prüft die Hauptquest der
+// Goldenen Maske und eine Koop-Runde (Host + Gast über ?netloop). Ausgabe: kurze Zusammenfassung, Exit-Code 1 bei Fehlern.
+// Aufruf: node tests/smoke.mjs   (optional THREE_DIR=… für eine lokale Kopie von three@0.160.0)
+import { createRequire } from 'module';
+import http from 'http';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+let chromium;
+for (const base of [ROOT, '/opt/node-tools/node_modules/']) { try { ({chromium} = createRequire(path.join(base, 'x.js'))('playwright')); break; } catch (e) {} }
+if (!chromium) { console.error('Playwright fehlt (npm i playwright)'); process.exit(2); }
+const THREE_DIR = process.env.THREE_DIR || path.join(ROOT, 'node_modules', 'three');
+if (!fs.existsSync(path.join(THREE_DIR, 'build', 'three.module.js'))) { console.error('three@0.160.0 fehlt (npm i three@0.160.0) oder THREE_DIR setzen'); process.exit(2); }
+
+// --- kleiner Webserver: Spiel + Test-Haken (window.EV) + three lokal statt CDN ---
+const TYPES = {'.html':'text/html', '.js':'text/javascript', '.mjs':'text/javascript', '.json':'application/json', '.png':'image/png', '.mp3':'audio/mpeg', '.svg':'image/svg+xml', '.css':'text/css'};
+const srv = http.createServer((rq, rs) => {
+  let u = decodeURIComponent(rq.url.split('?')[0]); if (u === '/') u = '/index.html';
+  let f = u.startsWith('/three/') ? path.join(THREE_DIR, u.slice(7)) : path.join(ROOT, u);
+  if (!f.startsWith(ROOT) && !f.startsWith(THREE_DIR)) { rs.writeHead(403); return rs.end(); }
+  fs.readFile(f, (e, d) => {
+    if (e) { rs.writeHead(404); return rs.end(); }
+    if (u === '/index.html') { let s = d.toString('utf8').replaceAll('https://cdn.jsdelivr.net/npm/three@0.160.0/', '/three/'); const i = s.lastIndexOf('</script>'); s = s.slice(0, i) + '\nwindow.EV = c => eval(c);\n' + s.slice(i); d = Buffer.from(s); }
+    rs.writeHead(200, {'Content-Type':TYPES[path.extname(f)] || 'application/octet-stream'}); rs.end(d);
+  });
+});
+await new Promise(r => srv.listen(0, '127.0.0.1', r));
+const URL0 = `http://127.0.0.1:${srv.address().port}/`;
+
+const W = ms => new Promise(r => setTimeout(r, ms));
+const results = [], errs = [];
+const ok = (name, cond, info = '') => { results.push([!!cond, name, info]); console.log(`${cond ? '✓' : '✗'} ${name}${info ? ' – ' + info : ''}`); };
+const browser = await chromium.launch({args:['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required']});
+const ctx = await browser.newContext({viewport:{width:800, height:480}});
+const open = async (q, tag) => {
+  const p = await ctx.newPage(); p.on('pageerror', e => errs.push(`${tag}: ${e.message} ${(e.stack || '').split('\n')[1] || ''}`.trim()));
+  await p.goto(URL0 + q, {waitUntil:'domcontentloaded', timeout:240000}); await p.waitForFunction(() => window.EV, null, {timeout:240000});
+  return {p, E:c => p.evaluate(c => window.EV(c), c)};
+};
+const sim = (E, sec) => E(`(() => { const n = Math.round(${sec}/.05); for (let i = 0; i < n; i++) update(.05); return 1; })()`);
+const startMap = async ({p, E}, id) => {
+  await E(`selMap = '${id}'; $('startBtn').click(); 1`); await W(2500);
+  for (let i = 0; i < 8 && (await E('state')) !== 'playing'; i++) { await p.keyboard.press('Enter'); await W(1500); }
+  return E('state');
+};
+
+try {
+  // ---------- Einzelspieler: alle Karten ----------
+  const S = await open('', 'SP'); await W(1500); await S.p.mouse.click(400, 240); await W(800);
+  ok('Hauptmenü lädt', await S.E(`state === 'menu' && !!$('startBtn')`), 'Version ' + await S.E('GAME_VER'));
+  for (const id of await S.E('Object.keys(MAPS)')) {
+    const st = await startMap(S, id);
+    await S.E('C.god = true; breakT = .1; 1'); await sim(S.E, 25);
+    const r = JSON.parse(await S.E(`JSON.stringify({w:wave, z:zombies.length, k:kills, box:BOX_SPOTS.length, mq:!!MQO})`));
+    await S.E('for (const z of [...zombies]) damageZombie(z, 1e9, z.g.position.clone().setY(1)); 1'); await sim(S.E, 2);
+    ok(`Karte ${id}`, st === 'playing' && r.w >= 1 && (r.z > 0 || r.k > 0) && r.box === 6 && r.mq, `Welle ${r.w}, ${r.z} Zombies, ${r.box} Box-Plätze`);
+    if (id === 'theater') {
+      await S.E('for (const D of DOORS) if (!D.open) thOpenDoor(D, 0, true); 1'); await sim(S.E, 6);
+      const stuck = await S.E('zombies.filter(z => z.win < 0 && !thOpenAt(z.g.position.x, z.g.position.z, 0)).length');
+      ok('Goldene Maske: alle Türen offen, keine Zombies im Abseits', stuck === 0, `${stuck} außerhalb`);
+      await S.E(`mqAdmin('mqboss'); 1`); await sim(S.E, 8);
+      const qb = await S.E(`!!zombies.find(z => z.bossKind === 'qb_theater')`);
+      await S.E(`mqAdmin('mqwin'); 1`); await sim(S.E, 1);
+      ok('Goldene Maske: Quest-Boss erscheint und Quest lässt sich abschließen', qb && await S.E('MQS.done'));
+    }
+    await S.E(`state = 'over'; showMenu(); 1`); await W(800);
+  }
+  await S.p.close();
+
+  // ---------- Koop: Host + Gast ----------
+  const H = await open('?netloop', 'Host');
+  await H.E(`openCoop(); $('coopName').value = 'Host'; netHost(); 1`); await W(1500); const code = await H.E('NET.code');
+  const G = await open('?netloop', 'Gast');
+  await G.E(`openCoop(); $('coopName').value = 'Gast'; $('coopCode').value = '${code}'; netJoin(); 1`); await W(5000);
+  ok('Koop: Gast tritt der Lobby bei', await H.E('NET.pl.size') === 1);
+  await H.E(`netStart('theater'); 1`); await W(10000);
+  ok('Koop: beide im Spiel', await H.E('state') === 'playing' && await G.E('state') === 'playing');
+  await H.E('C.god = true; breakT = .1; 1'); await G.E('C.god = true; 1');
+  for (let i = 0; i < 10; i++) { await sim(H.E, 1.5); await W(300); }
+  await W(1500);
+  const hz = await H.E('zombies.length'), gz = await G.E('zombies.length');
+  ok('Koop: Gast sieht die Zombies des Hosts', hz > 0 && gz > 0, `Host ${hz}, Gast ${gz}`);
+  await G.E('score = 5000; thBuyDoor(DOORS[0]); 1'); await W(3000);
+  const gs = await G.E('score');
+  ok('Koop: Gast kauft eine Tür – Host öffnet sie für alle, nur der Gast zahlt', await H.E('DOORS[0].open') && await G.E('DOORS[0].open') && gs === 5000 - await G.E('DOORS[0].cost'), `Gast-Geld ${gs}`);
+} catch (e) { ok('Testlauf ohne Absturz', false, e.message.split('\n')[0]); }
+
+await browser.close(); srv.close();
+ok('Keine Skriptfehler im Spiel', errs.length === 0, errs.length ? errs.slice(0, 5).join(' | ') : '');
+const bad = results.filter(r => !r[0]).length;
+console.log(bad ? `\n${bad} von ${results.length} Prüfungen FEHLGESCHLAGEN` : `\nAlle ${results.length} Prüfungen bestanden`);
+process.exit(bad ? 1 : 0);
