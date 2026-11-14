@@ -13,3 +13,15 @@ class_name = "Directory"
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Room", "Directory"]
+
+[[durable_objects.bindings]]
+name = "ACCOUNT"
+class_name = "Account"
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["Account"]
+
+[vars]
+# Öffentliche OAuth-Client-ID aus der Google Cloud Console (leer = Anmeldung noch nicht eingerichtet)
+GOOGLE_CLIENT_ID = ""

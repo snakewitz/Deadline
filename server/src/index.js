@@ -6,7 +6,7 @@
 //  System: {sys:'open'|'close', c} an den Host · {sys:'hostgone'|'nohost'|'full'|'taken'} an Gäste/Host
 
 const MAX_GUESTS = 3, MAX_FRAME = 256 * 1024, LOBBY_TTL = 10 * 60 * 1000;
-const CORS = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, OPTIONS', 'Cache-Control': 'no-store'};
+const CORS = {'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '86400', 'Cache-Control': 'no-store'};
 const codeOk = c => /^[A-Z0-9]{4,8}$/.test(c);
 
 export default {
@@ -14,6 +14,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, {headers: CORS});
     if (url.pathname === '/' || url.pathname === '/health') return new Response('Deadline-Relay läuft', {headers: CORS});
+    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname === '/account') return accounts(req, env, url);
     if (url.pathname === '/lobbies') {
       const r = await env.DIR.get(env.DIR.idFromName('dir')).fetch('https://dir/list');
       return new Response(await r.text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
@@ -99,4 +100,77 @@ export class Directory { // Liste der öffentlichen Lobbys
 function clean(i) {
   const s = (v, n) => String(v ?? '').slice(0, n);
   return {lobby: s(i.lobby, 24), host: s(i.host, 14), col: s(i.col, 7), ver: s(i.ver, 8), n: Math.max(0, Math.min(4, i.n | 0)), max: Math.max(1, Math.min(4, i.max | 0)), open: !!i.open, st: s(i.st, 40)};
+}
+
+
+// ================= Konten (Anmeldung mit Google) =================
+// Gespeichert wird nur: Googles anonyme Konto-Nummer (sub, gehasht als Schlüssel) + Spielstand + Zeitstempel.
+// Keine Passwörter, keine E-Mail-Adressen. Die E-Mail aus dem Google-Ausweis wird nur einmalig mit ADMIN_EMAIL verglichen (Secret, nicht im Code).
+// Secrets (wrangler secret put): SESSION_SECRET (zufällig, signiert Sitzungen), ADMIN_EMAIL. Variable: GOOGLE_CLIENT_ID (öffentlich).
+const MAX_SAVE = 400 * 1024, SESSION_DAYS = 60;
+const J = (o, status = 200) => new Response(JSON.stringify(o), {status, headers: {...CORS, 'Content-Type': 'application/json'}});
+const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64u = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const enc = new TextEncoder();
+let JWKS = null, JWKS_T = 0;
+async function googleKeys() {
+  if (JWKS && Date.now() - JWKS_T < 3600e3) return JWKS;
+  const r = await fetch('https://www.googleapis.com/oauth2/v3/certs'); JWKS = (await r.json()).keys || []; JWKS_T = Date.now(); return JWKS;
+}
+async function verifyGoogle(cred, clientId) { // Google-Ausweis (ID-Token) prüfen: Signatur, Aussteller, Empfänger, Ablauf
+  const [h, p, sig] = String(cred).split('.'); if (!h || !p || !sig) throw new Error('format');
+  const head = JSON.parse(new TextDecoder().decode(unb64u(h))), pay = JSON.parse(new TextDecoder().decode(unb64u(p)));
+  let jwk = (await googleKeys()).find(k => k.kid === head.kid); if (!jwk) { JWKS = null; jwk = (await googleKeys()).find(k => k.kid === head.kid); } if (!jwk || head.alg !== 'RS256') throw new Error('key');
+  const key = await crypto.subtle.importKey('jwk', jwk, {name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256'}, false, ['verify']);
+  if (!await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, unb64u(sig), enc.encode(h + '.' + p))) throw new Error('sig');
+  if (!['accounts.google.com', 'https://accounts.google.com'].includes(pay.iss)) throw new Error('iss');
+  if (pay.aud !== clientId) throw new Error('aud'); if (!pay.exp || pay.exp*1000 < Date.now() - 60e3) throw new Error('exp'); if (!pay.sub) throw new Error('sub');
+  return pay;
+}
+async function hmac(secret, data) { const k = await crypto.subtle.importKey('raw', enc.encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']); return b64u(await crypto.subtle.sign('HMAC', k, enc.encode(data))); }
+async function makeSession(env, uid, admin) { const body = b64u(enc.encode(JSON.stringify({u: uid, a: admin ? 1 : 0, e: Date.now() + SESSION_DAYS*864e5}))); return body + '.' + await hmac(env.SESSION_SECRET, body); }
+async function readSession(env, req) {
+  const t = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/, ''), [body, sig] = t.split('.'); if (!body || !sig) return null;
+  const want = await hmac(env.SESSION_SECRET, body); if (want.length !== sig.length) return null; let d = 0; for (let i = 0; i < sig.length; i++) d |= want.charCodeAt(i) ^ sig.charCodeAt(i); if (d) return null;
+  try { const o = JSON.parse(new TextDecoder().decode(unb64u(body))); return o.e > Date.now() ? o : null; } catch (e) { return null; }
+}
+const sha = async s => b64u(await crypto.subtle.digest('SHA-256', enc.encode(s)));
+const tooMany = new Map();   // einfache Bremse je IP (pro Server-Instanz)
+async function accounts(req, env, url) {
+  if (!env.GOOGLE_CLIENT_ID || !env.SESSION_SECRET) return J({err: 'not_configured'}, 503);
+  const acc = uid => env.ACCOUNT.get(env.ACCOUNT.idFromName(uid));
+  if (url.pathname === '/auth/google' && req.method === 'POST') {
+    const ip = req.headers.get('CF-Connecting-IP') || '?', n = (tooMany.get(ip) || []).filter(t => Date.now() - t < 60e3); if (n.length > 20) return J({err: 'slow_down'}, 429); n.push(Date.now()); tooMany.set(ip, n);
+    let pay; try { pay = await verifyGoogle((await req.json()).cred, env.GOOGLE_CLIENT_ID); } catch (e) { return J({err: 'bad_token'}, 401); }
+    const uid = await sha('g:' + pay.sub), admin = !!(env.ADMIN_EMAIL && pay.email_verified && String(pay.email).toLowerCase() === String(env.ADMIN_EMAIL).toLowerCase());
+    const info = await (await acc(uid).fetch('https://a/touch', {method: 'POST'})).json();
+    return J({token: await makeSession(env, uid, admin), isNew: info.isNew, rev: info.rev, admin});
+  }
+  const s = await readSession(env, req); if (!s) return J({err: 'login'}, 401);
+  if (url.pathname === '/auth/me') { const info = await (await acc(s.u).fetch('https://a/info')).json(); return J({admin: !!s.a, rev: info.rev, exists: info.exists}); }
+  if (url.pathname === '/save' && req.method === 'GET') return new Response(await (await acc(s.u).fetch('https://a/get')).text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
+  if (url.pathname === '/save' && req.method === 'PUT') {
+    const txt = await req.text(); if (txt.length > MAX_SAVE) return J({err: 'too_big'}, 413);
+    const r = await acc(s.u).fetch('https://a/put', {method: 'POST', body: txt}); return new Response(await r.text(), {status: r.status, headers: {...CORS, 'Content-Type': 'application/json'}});
+  }
+  if (url.pathname === '/account' && req.method === 'DELETE') { await acc(s.u).fetch('https://a/delete', {method: 'POST'}); return J({ok: true}); }
+  return J({err: 'not_found'}, 404);
+}
+export class Account { // ein Durable Object je Konto
+  constructor(state) { this.state = state; }
+  async fetch(req) {
+    const p = new URL(req.url).pathname, st = this.state.storage;
+    const meta = (await st.get('meta')) || null;
+    if (p === '/touch') { const now = Date.now(); if (!meta) { await st.put('meta', {created: now, seen: now, rev: 0}); return J({isNew: true, rev: 0}); } meta.seen = now; await st.put('meta', meta); return J({isNew: !meta.rev, rev: meta.rev}); }
+    if (p === '/info') return J({exists: !!meta, rev: meta ? meta.rev : 0});
+    if (p === '/get') return J({rev: meta ? meta.rev : 0, save: (await st.get('save')) || null, at: meta && meta.updated || 0});
+    if (p === '/put') {
+      let b; try { b = JSON.parse(await req.text()); } catch (e) { return J({err: 'bad_json'}, 400); }
+      if (!b || typeof b.save !== 'object' || Array.isArray(b.save)) return J({err: 'bad_save'}, 400);
+      const m = meta || {created: Date.now(), rev: 0}; if ((b.base | 0) !== (m.rev | 0)) return J({err: 'conflict', rev: m.rev}, 409);
+      m.rev = (m.rev | 0) + 1; m.updated = Date.now(); m.seen = m.updated; await st.put('save', b.save); await st.put('meta', m); return J({ok: true, rev: m.rev});
+    }
+    if (p === '/delete') { await st.deleteAll(); return J({ok: true}); }
+    return J({err: 'not_found'}, 404);
+  }
 }
