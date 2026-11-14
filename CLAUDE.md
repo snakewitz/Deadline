@@ -132,6 +132,12 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   - Hauptquest „Die letzte Vorstellung“ (`MQD.theater`, Code-Block `thQuest*` vor `MQ_INFO`): `masks` (5 aus 10 festen Wandplätzen, nur im eigenen Taschenlampenkegel sichtbar – rein lokal, Aufheben per `qa` `mask`), `spot` (3 Scheinwerfer `thSpotPos(i, MQS.bt)`, `bt` zählt bei Gästen lokal hoch; `tm` steigt, solange ein Lebender im Kreis steht), `film` (Projektor auf dem Rang `qa proj`; `m` Bit 16 = läuft, `m & 15` = Symbol + 1, `bt` Restzeit; Tafeln `userData.dest = {qsym}` → `damageDest` → `qa sym`), `applause` (Host-Wert `MQL.ap`, Kills in Zone `saal`, `MQS.n` = gerundet), `boss`.
   - Quest-Boss `qb_theater` „Der Große Zambrini“ (`buildMagician`, `qbTheaterMech`): normal Schaden ×0,22; Kastentrick `bp 1`, `bt` 19 → 0, `it` = [echter Kasten, 5 Tauschpaare], Kastenpositionen überall gleich aus `thBoxLayout(it, bt)`; Treffer auf Kasten (`dest.qbox`, erst ab `bt < 12,5`) → `qa box` → `thShellPick`: richtig = `bp 2` (9 s ×1,8), falsch = Explosion + Marionetten + 6 % Heilung. Angriffe `cards`/`doves`/`swords`/`mblink`/`rabbits` in `QATK`.
   - Wunderwaffe `wwand` „Zambrinis Zauberstab“ (`wonder:'wand'`): Nicht-Eliten im Umkreis 3,5 m bekommen `z.levT` (Host), schweben über `airY` (Snapshot) und sterben über `toKill`. Erfolg `mq_theater`.
+- 4.61:
+  - Händler Nils (Visiere) entfernt – Visiere gibt es nur noch im Inventar gegen Schrott (`OPT_SCRAP`). Theater-`marketSpots` hat jetzt 4 Stände + Schmiede (letzter Eintrag).
+  - Höhe in Stockwerken: Aufheben von Beute/Power-ups vergleicht mit der Höhe des Gegenstands; `hurtAt` rechnet `py - gyAt(px, pz)`; Warnkreise (`hzMark`) und Schockwellen (`hzWave`) liegen auf `gyAt` (vorher unter der Bühne unsichtbar, auf dem Rang trafen Flächenangriffe nie).
+  - Box-Melodie: `snd.jingle(from)` merkt sich ihren Ausgang in `JNG.o`; `jingleTick` (in `frame`) stoppt sie, solange der Einzelspieler eingefroren ist (Pause/Menüs), und setzt sie danach bei `box.t` fort. Im Koop läuft alles weiter.
+  - Waffenpflicht: zufällige Stufe (`tier` 0–3, je Upgrade ±1), Sterne im Hinweis.
+  - Goldene Maske ohne Sackgassen: neue Gänge `W2` Westpassage (Puppenwerkstatt ↔ Wandelgang), `W3` Archivgang (Direktion ↔ Garderobe), `E2` Tiergang (Menagerie ↔ Requisitenkammer, Rampe in x-Richtung 0 → 1,2 m). Je eine Kauftür (1000/1000/1250). Regel: jeder Raum muss auf einem Rundweg liegen – neue Räume immer mit zwei Zugängen planen.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
