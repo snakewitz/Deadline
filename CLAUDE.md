@@ -138,6 +138,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   - Box-Melodie: `snd.jingle(from)` merkt sich ihren Ausgang in `JNG.o`; `jingleTick` (in `frame`) stoppt sie, solange der Einzelspieler eingefroren ist (Pause/Menüs), und setzt sie danach bei `box.t` fort. Im Koop läuft alles weiter.
   - Waffenpflicht: zufällige Stufe (`tier` 0–3, je Upgrade ±1), Sterne im Hinweis.
   - Goldene Maske ohne Sackgassen: neue Gänge `W2` Westpassage (Puppenwerkstatt ↔ Wandelgang), `W3` Archivgang (Direktion ↔ Garderobe), `E2` Tiergang (Menagerie ↔ Requisitenkammer, Rampe in x-Richtung 0 → 1,2 m). Je eine Kauftür (1000/1000/1250). Regel: jeder Raum muss auf einem Rundweg liegen – neue Räume immer mit zwei Zugängen planen.
+- 4.62: Theater-Masken fairer – 2 m über dem jeweiligen Boden statt ~3 m, Sichtkegel cos > 0,82 (voll ab 0,9, bis 18 m), Hinweise im Umkreis von 12 m: leises Glöckchen (`sp3`, alle 5–7 s) und unter 10 m goldenes Funkeln (beides lokal).
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
