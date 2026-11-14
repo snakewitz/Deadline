@@ -14,7 +14,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, {headers: CORS});
     if (url.pathname === '/' || url.pathname === '/health') return new Response('Deadline-Relay läuft', {headers: CORS});
-    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname.startsWith('/account') || url.pathname === '/name/check') return accounts(req, env, url);
+    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname.startsWith('/account') || url.pathname.startsWith('/name/')) return accounts(req, env, url);
     if (url.pathname === '/lobbies') {
       const r = await env.DIR.get(env.DIR.idFromName('dir')).fetch('https://dir/list');
       return new Response(await r.text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
@@ -148,8 +148,18 @@ async function accounts(req, env, url) {
   }
   const names = () => env.NAMES.get(env.NAMES.idFromName('names'));
   if (url.pathname === '/name/check') { const n = url.searchParams.get('n') || '', bad = nameProblem(n); if (bad) return J({ok: false, err: bad});
-    return J(await (await names().fetch('https://n/check?n=' + encodeURIComponent(n))).json()); }
+    const ses = await readSession(env, req);   // angemeldet: eigener Name und (für den Besitzer) reservierte Namen zählen als frei
+    return J(await (await names().fetch('https://n/check?n=' + encodeURIComponent(n) + (ses ? '&uid=' + ses.u + (ses.a ? '&adm=1' : '') : ''))).json()); }
+  if (url.pathname === '/name/verify' && req.method === 'POST') { // Koop: gehört der Name einem Konto? Ohne gültigen Nachweis → name_guest
+    let b; try { b = await req.json(); } catch (e) { return J({err: 'bad_json'}, 400); }
+    const name = String(b.name || '').slice(0, 24), key = name.toLowerCase().trim();
+    if (b.proof) { const [body, sig] = String(b.proof).split('.'); if (body && sig && sig === await hmac(env.SESSION_SECRET, 'n:' + body)) { try { const o = JSON.parse(new TextDecoder().decode(unb64u(body))); if (o.e > Date.now() && o.n === key) return J({ok: true, name}); } catch (e) {} } }
+    const taken = (await (await names().fetch('https://n/check?n=' + encodeURIComponent(key))).json()).err === 'taken' || /_guest$/i.test(key);
+    return J(taken ? {ok: false, name: guestName(name)} : {ok: true, name});
+  }
   const s = await readSession(env, req); if (!s) return J({err: 'login'}, 401);
+  if (url.pathname === '/name/proof') { const info = await (await acc(s.u).fetch('https://a/info')).json(); if (!info.name) return J({err: 'no_name'}, 404);
+    const body = b64u(enc.encode(JSON.stringify({n: info.name.toLowerCase(), e: Date.now() + 2*864e5}))); return J({proof: body + '.' + await hmac(env.SESSION_SECRET, 'n:' + body)}); }
   if (url.pathname === '/auth/me') { const info = await (await acc(s.u).fetch('https://a/info')).json(); return J({admin: !!s.a, rev: info.rev, exists: info.exists, name: info.name || ''}); }
   if (url.pathname === '/account/name' && req.method === 'POST') { // Nutzernamen festlegen/ändern – einmalig, Groß-/Kleinschreibung egal
     let n; try { n = String((await req.json()).name || '').trim(); } catch (e) { return J({err: 'bad_json'}, 400); }
@@ -190,9 +200,10 @@ export class Account { // ein Durable Object je Konto
 const RESERVED = [   // nur das Besitzer-Konto (Admin) darf diese Namen nehmen
   'admin', 'administrator', 'deadline', 'host', 'moderator', 'mod', 'support', 'system', 'server', 'gast', 'guest', 'snakewitz'];
 const BADW = ['nazi', 'hitler', 'fick', 'fotze', 'hure', 'nigger', 'neger', 'schwuchtel', 'wichser', 'arschloch', 'hurensohn', 'fuck', 'bitch', 'cunt', 'whore', 'porn', 'sex'];
+const guestName = n => String(n).replace(/_guest$/i, '').trim().slice(0, 14) + '_guest';   // max. 20 Zeichen
 function nameProblem(n) {
   if (typeof n !== 'string' || n.length < 3) return 'too_short'; if (n.length > 14) return 'too_long';
-  if (!/^[A-Za-z0-9ÄÖÜäöüß][A-Za-z0-9ÄÖÜäöüß_.\-]*$/.test(n)) return 'bad_chars';
+  if (!/^[A-Za-z0-9ÄÖÜäöüß][A-Za-z0-9ÄÖÜäöüß_.\-]*$/.test(n)) return 'bad_chars'; if (/_guest$/i.test(n)) return 'not_allowed';
   const l = n.toLowerCase(), flat = l.replace(/[_.\-]/g, '').replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's');
   if (BADW.some(w => flat.includes(w))) return 'not_allowed'; return '';
 }
@@ -200,7 +211,8 @@ export class Names { // Verzeichnis: name (klein) → Konto; ein einziges Durabl
   constructor(state, env) { this.state = state; this.env = env; }
   async fetch(req) {
     const u = new URL(req.url), st = this.state.storage;
-    if (u.pathname === '/check') { const n = (u.searchParams.get('n') || '').toLowerCase(); const owner = await st.get('n:' + n); return J({ok: !owner && !RESERVED.includes(n), err: owner || RESERVED.includes(n) ? 'taken' : ''}); }
+    if (u.pathname === '/check') { const n = (u.searchParams.get('n') || '').toLowerCase(), uid = u.searchParams.get('uid'), owner = await st.get('n:' + n);
+      const free = (!owner || owner === uid) && (!RESERVED.includes(n) || u.searchParams.get('adm') === '1' || owner === uid); return J({ok: free, err: free ? '' : 'taken'}); }
     const b = await req.json();
     if (u.pathname === '/claim') {
       const key = b.name.toLowerCase(), owner = await st.get('n:' + key);
