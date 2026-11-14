@@ -61,6 +61,21 @@ try {
       await S.E('for (const D of DOORS) if (!D.open) thOpenDoor(D, 0, true); 1'); await sim(S.E, 6);
       const stuck = await S.E('zombies.filter(z => z.win < 0 && !thOpenAt(z.g.position.x, z.g.position.z, 0)).length');
       ok('Goldene Maske: alle Türen offen, keine Zombies im Abseits', stuck === 0, `${stuck} außerhalb`);
+      // Platzierungen: nichts (Box-Plätze, Box-Karten, Perks, Stände, Tresor, Spielautomat, Deko) steht vor Türen, Fenstern, Treppen oder Bögen
+      const block = await S.E(`(() => { const Z = [], F = [], out = [];
+        for (const D of DOORS) { const hw = D.w/2 + .9; Z.push(D.ax === 'x' ? {n:'Tür ' + D.name, a:D.x - hw, b:D.x + hw, c:D.z - 2.6, d:D.z + 2.6, y:D.y} : {n:'Tür ' + D.name, a:D.x - 2.6, b:D.x + 2.6, c:D.z - hw, d:D.z + hw, y:D.y}); }
+        for (const w of WINS) if (!w.hatch) Z.push({n:'Fenster ' + w.i, a:w.inP.x - 1.3, b:w.inP.x + 1.3, c:w.inP.z - 1.3, d:w.inP.z + 1.3, y:w.y});
+        for (const r of RAMPS) { const L = 1.6; if (r.ax === 'x') Z.push({n:'Treppe', a:r.minX - L, b:r.minX, c:r.minZ, d:r.maxZ}, {n:'Treppe', a:r.maxX, b:r.maxX + L, c:r.minZ, d:r.maxZ}); else Z.push({n:'Treppe', a:r.minX, b:r.maxX, c:r.minZ - L, d:r.minZ}, {n:'Treppe', a:r.minX, b:r.maxX, c:r.maxZ, d:r.maxZ + L}); }
+        for (const z of [4, 22]) Z.push({n:'Bogen', a:-22.6, b:-17.4, c:z - 2.9, d:z + 2.9, y:0});
+        const fp = (x, z, ry, w, d, n) => { const c = Math.abs(Math.cos(ry)), sn = Math.abs(Math.sin(ry)), hx = (w*c + d*sn)/2, hz = (w*sn + d*c)/2; F.push({n, a:x - hx, b:x + hx, c:z - hz, d:z + hz}); };
+        (curMap.boxSpots || []).forEach(([x, z, ry], i) => { fp(x, z, ry, 2.6, 1.4, 'Box-Platz ' + i); const c = Math.cos(ry), sn = Math.sin(ry); fp(x + 2.05*c - .35*sn, z - 2.05*sn - .35*c, ry, .9, .5, 'Box-Karte ' + i); });
+        for (const [k, v] of Object.entries(curMap.perkAt || {})) fp(v[0], v[1], v[2], 1.3, 1.1, 'Perk ' + k);
+        (curMap.marketSpots || []).forEach(([x, z, ry], i) => fp(x, z, ry || 0, 3.6, 2.2, 'Stand ' + i));
+        if (curMap.vaultAt) fp(curMap.vaultAt[0], curMap.vaultAt[1], curMap.vaultAt[2], 1.6, 1.2, 'Tresor'); if (curMap.slotAt) fp(curMap.slotAt[0], curMap.slotAt[1], curMap.slotAt[2] || 0, 1.4, 1.2, 'Spielautomat');
+        for (const o of obstacles) { if (o.h >= 50 || o.fl) continue; const w = o.maxX - o.minX, d = o.maxZ - o.minZ; if (Math.min(w, d) <= .45 && Math.max(w, d) <= 2) continue; F.push({n:'Hindernis ' + ((o.minX + o.maxX)/2).toFixed(1) + '/' + ((o.minZ + o.maxZ)/2).toFixed(1), a:o.minX, b:o.maxX, c:o.minZ, d:o.maxZ, o}); }
+        for (const f of F) for (const z of Z) if (f.b > z.a && f.a < z.b && f.d > z.c && f.c < z.d && (z.y === undefined || Math.abs(gyAt((f.a + f.b)/2, (f.c + f.d)/2) - z.y) < 1)) out.push(z.n + ' ← ' + f.n);
+        return [...new Set(out)].join(', '); })()`);
+      ok('Goldene Maske: nichts blockiert Türen, Fenster, Treppen oder Bögen', !block, block);
       await S.E(`mqAdmin('mqboss'); 1`); await sim(S.E, 8);
       const qb = await S.E(`!!zombies.find(z => z.bossKind === 'qb_theater')`);
       await S.E(`mqAdmin('mqwin'); 1`); await sim(S.E, 1);
