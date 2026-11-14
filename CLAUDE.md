@@ -139,6 +139,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   - Waffenpflicht: zufällige Stufe (`tier` 0–3, je Upgrade ±1), Sterne im Hinweis.
   - Goldene Maske ohne Sackgassen: neue Gänge `W2` Westpassage (Puppenwerkstatt ↔ Wandelgang), `W3` Archivgang (Direktion ↔ Garderobe), `E2` Tiergang (Menagerie ↔ Requisitenkammer, Rampe in x-Richtung 0 → 1,2 m). Je eine Kauftür (1000/1000/1250). Regel: jeder Raum muss auf einem Rundweg liegen – neue Räume immer mit zwei Zugängen planen.
 - 4.62: Theater-Masken fairer – 2 m über dem jeweiligen Boden statt ~3 m, Sichtkegel cos > 0,82 (voll ab 0,9, bis 18 m), Hinweise im Umkreis von 12 m: leises Glöckchen (`sp3`, alle 5–7 s) und unter 10 m goldenes Funkeln (beides lokal).
+- 4.63: Schlichtes Hauptmenü (Block „4.63“ am Ende des Stylesheets, überschreibt 4.38/4.39): nur `startBtn`/`coopBtn` als große `.mm-b`, die übrigen Punkte als zweispaltiges Textmenü `.mm-sub` > `.mm-l` (IDs unverändert), Einstellungen/Steuerung als kleine Textlinks, keine Aktennummern. Rechte Spalte = eine abgedunkelte Fläche ohne Kästen/Ring/Glanz: Profil `.p2-*` (Name, Rang · Level, dünne XP-Linie, Werte-Zeile, Liste „Beste Welle je Karte“), Konto-Zeile `.pf-acct` mit Punkt, News nur 3 Einträge ohne Symbole.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
