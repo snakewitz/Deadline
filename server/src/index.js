@@ -14,7 +14,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, {headers: CORS});
     if (url.pathname === '/' || url.pathname === '/health') return new Response('Deadline-Relay läuft', {headers: CORS});
-    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname === '/account') return accounts(req, env, url);
+    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname.startsWith('/account') || url.pathname === '/name/check') return accounts(req, env, url);
     if (url.pathname === '/lobbies') {
       const r = await env.DIR.get(env.DIR.idFromName('dir')).fetch('https://dir/list');
       return new Response(await r.text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
@@ -144,16 +144,26 @@ async function accounts(req, env, url) {
     let pay; try { pay = await verifyGoogle((await req.json()).cred, env.GOOGLE_CLIENT_ID); } catch (e) { return J({err: 'bad_token'}, 401); }
     const uid = await sha('g:' + pay.sub), admin = !!(env.ADMIN_EMAIL && pay.email_verified && String(pay.email).toLowerCase() === String(env.ADMIN_EMAIL).toLowerCase());
     const info = await (await acc(uid).fetch('https://a/touch', {method: 'POST'})).json();
-    return J({token: await makeSession(env, uid, admin), isNew: info.isNew, rev: info.rev, admin});
+    return J({token: await makeSession(env, uid, admin), isNew: info.isNew, rev: info.rev, admin, name: info.name || ''});
   }
+  const names = () => env.NAMES.get(env.NAMES.idFromName('names'));
+  if (url.pathname === '/name/check') { const n = url.searchParams.get('n') || '', bad = nameProblem(n); if (bad) return J({ok: false, err: bad});
+    return J(await (await names().fetch('https://n/check?n=' + encodeURIComponent(n))).json()); }
   const s = await readSession(env, req); if (!s) return J({err: 'login'}, 401);
-  if (url.pathname === '/auth/me') { const info = await (await acc(s.u).fetch('https://a/info')).json(); return J({admin: !!s.a, rev: info.rev, exists: info.exists}); }
+  if (url.pathname === '/auth/me') { const info = await (await acc(s.u).fetch('https://a/info')).json(); return J({admin: !!s.a, rev: info.rev, exists: info.exists, name: info.name || ''}); }
+  if (url.pathname === '/account/name' && req.method === 'POST') { // Nutzernamen festlegen/ändern – einmalig, Groß-/Kleinschreibung egal
+    let n; try { n = String((await req.json()).name || '').trim(); } catch (e) { return J({err: 'bad_json'}, 400); }
+    const bad = nameProblem(n); if (bad) return J({err: bad}, 400);
+    const r = await names().fetch('https://n/claim', {method: 'POST', body: JSON.stringify({name: n, uid: s.u, adm: !!s.a})}), j = await r.json();
+    if (r.status !== 200) return J(j, r.status);
+    await acc(s.u).fetch('https://a/setname', {method: 'POST', body: JSON.stringify({name: n})}); return J({ok: true, name: n});
+  }
   if (url.pathname === '/save' && req.method === 'GET') return new Response(await (await acc(s.u).fetch('https://a/get')).text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
   if (url.pathname === '/save' && req.method === 'PUT') {
     const txt = await req.text(); if (txt.length > MAX_SAVE) return J({err: 'too_big'}, 413);
     const r = await acc(s.u).fetch('https://a/put', {method: 'POST', body: txt}); return new Response(await r.text(), {status: r.status, headers: {...CORS, 'Content-Type': 'application/json'}});
   }
-  if (url.pathname === '/account' && req.method === 'DELETE') { await acc(s.u).fetch('https://a/delete', {method: 'POST'}); return J({ok: true}); }
+  if (url.pathname === '/account' && req.method === 'DELETE') { await names().fetch('https://n/release', {method: 'POST', body: JSON.stringify({uid: s.u})}); await acc(s.u).fetch('https://a/delete', {method: 'POST'}); return J({ok: true}); }
   return J({err: 'not_found'}, 404);
 }
 export class Account { // ein Durable Object je Konto
@@ -161,8 +171,9 @@ export class Account { // ein Durable Object je Konto
   async fetch(req) {
     const p = new URL(req.url).pathname, st = this.state.storage;
     const meta = (await st.get('meta')) || null;
-    if (p === '/touch') { const now = Date.now(); if (!meta) { await st.put('meta', {created: now, seen: now, rev: 0}); return J({isNew: true, rev: 0}); } meta.seen = now; await st.put('meta', meta); return J({isNew: !meta.rev, rev: meta.rev}); }
-    if (p === '/info') return J({exists: !!meta, rev: meta ? meta.rev : 0});
+    if (p === '/touch') { const now = Date.now(); if (!meta) { await st.put('meta', {created: now, seen: now, rev: 0}); return J({isNew: true, rev: 0}); } meta.seen = now; await st.put('meta', meta); return J({isNew: !meta.rev, rev: meta.rev, name: meta.name || ''}); }
+    if (p === '/info') return J({exists: !!meta, rev: meta ? meta.rev : 0, name: meta && meta.name || ''});
+    if (p === '/setname') { const {name} = await req.json(); const m = meta || {created: Date.now(), rev: 0}; m.name = name; await st.put('meta', m); return J({ok: true}); }
     if (p === '/get') return J({rev: meta ? meta.rev : 0, save: (await st.get('save')) || null, at: meta && meta.updated || 0});
     if (p === '/put') {
       let b; try { b = JSON.parse(await req.text()); } catch (e) { return J({err: 'bad_json'}, 400); }
@@ -171,6 +182,33 @@ export class Account { // ein Durable Object je Konto
       m.rev = (m.rev | 0) + 1; m.updated = Date.now(); m.seen = m.updated; await st.put('save', b.save); await st.put('meta', m); return J({ok: true, rev: m.rev});
     }
     if (p === '/delete') { await st.deleteAll(); return J({ok: true}); }
+    return J({err: 'not_found'}, 404);
+  }
+}
+
+// ================= Nutzernamen (einmalig) =================
+const RESERVED = [   // nur das Besitzer-Konto (Admin) darf diese Namen nehmen
+  'admin', 'administrator', 'deadline', 'host', 'moderator', 'mod', 'support', 'system', 'server', 'gast', 'guest', 'snakewitz'];
+const BADW = ['nazi', 'hitler', 'fick', 'fotze', 'hure', 'nigger', 'neger', 'schwuchtel', 'wichser', 'arschloch', 'hurensohn', 'fuck', 'bitch', 'cunt', 'whore', 'porn', 'sex'];
+function nameProblem(n) {
+  if (typeof n !== 'string' || n.length < 3) return 'too_short'; if (n.length > 14) return 'too_long';
+  if (!/^[A-Za-z0-9ÄÖÜäöüß][A-Za-z0-9ÄÖÜäöüß_.\-]*$/.test(n)) return 'bad_chars';
+  const l = n.toLowerCase(), flat = l.replace(/[_.\-]/g, '').replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's');
+  if (BADW.some(w => flat.includes(w))) return 'not_allowed'; return '';
+}
+export class Names { // Verzeichnis: name (klein) → Konto; ein einziges Durable Object → keine Doppelvergabe
+  constructor(state, env) { this.state = state; this.env = env; }
+  async fetch(req) {
+    const u = new URL(req.url), st = this.state.storage;
+    if (u.pathname === '/check') { const n = (u.searchParams.get('n') || '').toLowerCase(); const owner = await st.get('n:' + n); return J({ok: !owner && !RESERVED.includes(n), err: owner || RESERVED.includes(n) ? 'taken' : ''}); }
+    const b = await req.json();
+    if (u.pathname === '/claim') {
+      const key = b.name.toLowerCase(), owner = await st.get('n:' + key);
+      if ((owner && owner !== b.uid) || (RESERVED.includes(key) && !b.adm)) return J({err: 'taken'}, 409);
+      const old = await st.get('u:' + b.uid); if (old && old !== key) await st.delete('n:' + old);
+      await st.put('n:' + key, b.uid); await st.put('u:' + b.uid, key); return J({ok: true});
+    }
+    if (u.pathname === '/release') { const old = await st.get('u:' + b.uid); if (old) { await st.delete('n:' + old); await st.delete('u:' + b.uid); } return J({ok: true}); }
     return J({err: 'not_found'}, 404);
   }
 }
