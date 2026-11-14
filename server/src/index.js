@@ -159,7 +159,7 @@ async function accounts(req, env, url) {
   }
   const board = () => env.BOARD.get(env.BOARD.idFromName('board'));
   if (url.pathname === '/board' && req.method === 'GET') { // öffentliche Rangliste (unsichtbare Spieler werden ausgelassen)
-    const ses = await readSession(env, req), m = (url.searchParams.get('map') || 'all').replace(/[^a-z]/g, '').slice(0, 16) || 'all';
+    const ses = await readSession(env, req), m = (url.searchParams.get('map') || 'all').replace(/[^a-z0-9]/g, '').slice(0, 16) || 'all';   // 4.72: auch d<JJJJMMTT> = Tages-Rangliste
     return J(await (await board().fetch('https://b/list?map=' + m + (ses ? '&uid=' + ses.u : ''))).json()); }
   const s = await readSession(env, req); if (!s) return J({err: 'login'}, 401);
   if (url.pathname === '/board/submit' && req.method === 'POST') { // Ergebnis einer Runde (nur mit Nutzernamen)
@@ -167,7 +167,12 @@ async function accounts(req, env, url) {
     const info = await (await acc(s.u).fetch('https://a/info')).json(); if (!info.name) return J({err: 'no_name'}, 400);
     const map = String(b.map || '').replace(/[^a-z]/g, '').slice(0, 16), w = b.wave | 0, k = b.kills | 0, t = +b.time || 0;
     if (!map || w < 1 || w > 400 || k < 0 || k > w*150 + 50 || t < w*8 || t > 86400) return J({err: 'implausible'}, 400);   // grobe Plausibilitätsprüfung
-    return J(await (await board().fetch('https://b/submit', {method: 'POST', body: JSON.stringify({uid: s.u, n: info.name, map, w, k, t: Math.round(t), co: b.coop ? 1 : 0})})).json()); }
+    let key = map, only = 0;
+    if (b.daily !== undefined) { // 4.72: Tägliche Herausforderung – nur heute oder gestern (deutsche Zeit, Runde über Mitternacht) und nur in die Tagesliste
+      const d = String(b.daily), day = o => new Intl.DateTimeFormat('sv-SE', {timeZone: 'Europe/Berlin'}).format(new Date(Date.now() - o)).replace(/\D/g, '');
+      if (!/^\d{8}$/.test(d) || (d !== day(0) && d !== day(86400000))) return J({err: 'old_daily'}, 400);
+      key = 'd' + d; only = 1; }
+    return J(await (await board().fetch('https://b/submit', {method: 'POST', body: JSON.stringify({uid: s.u, n: info.name, map, key, only, w, k, t: Math.round(t), co: b.coop ? 1 : 0})})).json()); }
   if (url.pathname === '/board/hide' && req.method === 'POST') { let h; try { h = !!(await req.json()).hide; } catch (e) { return J({err: 'bad_json'}, 400); }
     return J(await (await board().fetch('https://b/hide', {method: 'POST', body: JSON.stringify({uid: s.u, hide: h})})).json()); }
   if (url.pathname === '/board/me') return J(await (await board().fetch('https://b/me?uid=' + s.u)).json());
@@ -254,13 +259,16 @@ export class Board {
     const b = await req.json();
     if (u.pathname === '/submit') {
       const e = {u: b.uid, n: b.n, w: b.w, k: b.k, t: b.t, co: b.co, m: b.map, at: Date.now()}, mine = (await st.get('b:' + b.uid)) || {}; let rank = 0, best = false;
-      for (const m of [b.map, 'all']) {
+      const main = b.key || b.map;
+      for (const m of b.only ? [main] : [main, 'all']) {
         if (!better(e, mine[m])) continue; best = true; mine[m] = e;
         const list = (await top(m)).filter(x => x.u !== b.uid); list.push(e); list.sort((x, y) => better(x, y) ? -1 : better(y, x) ? 1 : 0); await st.put('top:' + m, list.slice(0, BOARD_N));
-        if (m === b.map) rank = list.findIndex(x => x.u === b.uid) + 1;
+        if (m === main) rank = list.findIndex(x => x.u === b.uid) + 1;
       }
+      for (const m of Object.keys(mine)) if (/^d\d{8}$/.test(m) && m < 'd' + new Date(Date.now() - 20*86400000).toISOString().slice(0, 10).replace(/-/g, '')) { delete mine[m]; best = true; }   // alte Tageseinträge vergessen
       if (best) await st.put('b:' + b.uid, mine);
-      if (!rank) { const list = await top(b.map), i = list.findIndex(x => x.u === b.uid); rank = i >= 0 ? i + 1 : 0; }
+      if (b.only) for (let i = 21; i < 24; i++) await st.delete('top:d' + new Date(Date.now() - i*86400000).toISOString().slice(0, 10).replace(/-/g, ''));   // alte Tageslisten löschen
+      if (!rank) { const list = await top(main), i = list.findIndex(x => x.u === b.uid); rank = i >= 0 ? i + 1 : 0; }
       return J({ok: true, best, rank: rank <= BOARD_N ? rank : 0});
     }
     if (u.pathname === '/hide') { const h = new Set((await st.get('hidden')) || []); if (b.hide) h.add(b.uid); else h.delete(b.uid); await st.put('hidden', [...h]); return J({ok: true, hide: !!b.hide}); }

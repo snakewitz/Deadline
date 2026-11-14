@@ -83,6 +83,19 @@ try {
     }
     await S.E(`state = 'over'; showMenu(); 1`); await W(800);
   }
+  // ---------- 4.72: Tägliche Herausforderung + Schneemann-Attacke ----------
+  await S.E(`openMapSel(); 1`); await W(500);
+  const I = JSON.parse(await S.E('JSON.stringify(dailyInfo(dayKey()))'));
+  await S.E(`$('dailyGo').click(); 1`); await W(3000);
+  for (let i = 0; i < 6 && (await S.E('state')) !== 'playing'; i++) { await S.p.keyboard.press('Enter'); await W(1500); }
+  const dr = JSON.parse(await S.E(`JSON.stringify({on:DAILY.on, map:curMap.id, own:!!owned[DAILY.I.w], cust:lbCustom()})`));
+  ok('Tägliche Herausforderung startet (Karte, Tageswaffe, Regeln zählen für die Rangliste)', dr.on && dr.map === I.map && dr.own && !dr.cust, `${I.map}, ${I.w}, ${I.mods.join('/')}`);
+  await S.E(`C.god = true; SPR.force = 'snow'; breakT = .1; 1`); await sim(S.E, 8);
+  const sn = await S.E(`zombies.filter(z => z.type === 'snowman').length`);
+  await S.E('for (const z of [...zombies]) damageZombie(z, 1e9, z.g.position.clone().setY(1)); 1'); await sim(S.E, 3);
+  ok('Spezialrunde: Schneemann-Attacke mit 50 Schneemännern, danach Pause', sn === 50 && await S.E(`waveState === 'break' && !SPR.cur`), `${sn} Schneemänner`);
+  await S.E(`state = 'over'; showMenu(); 1`); await W(500);
+  ok('Nach der Herausforderung sind die Spielregeln wieder Standard', await S.E(`!DAILY.on && Object.keys(CFG_DEF).every(k => cfg[k] === CFG_DEF[k])`));
   await S.p.close();
 
   // ---------- Koop: Host + Gast ----------
@@ -101,6 +114,10 @@ try {
   await G.E('score = 5000; thBuyDoor(DOORS[0]); 1'); await W(3000);
   const gs = await G.E('score');
   ok('Koop: Gast kauft eine Tür – Host öffnet sie für alle, nur der Gast zahlt', await H.E('DOORS[0].open') && await G.E('DOORS[0].open') && gs === 5000 - await G.E('DOORS[0].cost'), `Gast-Geld ${gs}`);
+  await H.E(`SPR.force = 'run'; netSend({t:'wfx', k:'spf', y:'run'}); for (const z of [...zombies]) damageZombie(z, 1e9, z.g.position.clone().setY(1)); toSpawn = 0; 1`);
+  for (let i = 0; i < 6; i++) { await sim(H.E, 1); await W(300); }
+  await H.E('breakT = .1; 1'); for (let i = 0; i < 4; i++) { await sim(H.E, 1); await W(400); }
+  ok('Koop: Spezialrunde läuft auch beim Gast', await H.E(`SPR.cur`) === 'run' && await G.E(`SPR.cur`) === 'run');
 } catch (e) { ok('Testlauf ohne Absturz', false, e.message.split('\n')[0]); }
 
 await browser.close(); srv.close();
