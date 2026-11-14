@@ -149,6 +149,10 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   - Minikarte Goldene Maske: verschlossene Räume abgedunkelt, nicht geöffnete Türen als goldene Striche, erreichbare Türen mit Preis (aufrecht, gold = bezahlbar).
   - Leistung Goldene Maske (sichtbare Meshes 999 → 510, Zeichenaufrufe 617 → 350 bei offenen Türen): Fensterbretter als ein `InstancedMesh` (`WBI`, Bretter sind `Object3D`-Platzhalter mit `userData.inst`, `thBoardInstTick` schreibt die Matrizen nur bei `WBI.dirty`), Nägel ins Brett eingebacken (`WBM`, Vertexfarben), Glassplitter ein Mesh, Fenster verschlossener Zonen unsichtbar (`thWinVis`, im Menü alle sichtbar).
 - Testen vor jedem Push: `THREE_DIR=<Kopie von three@0.160.0> node tests/smoke.mjs` (alle Karten, Quest-Boss Goldene Maske, Koop Host + Gast inkl. Türkauf, keine Skriptfehler; kurze Ausgabe, Exit-Code 1 bei Fehlern). Läuft zusätzlich bei jedem Push auf GitHub (`.github/workflows/test.yml`, „Schnelltest“). Neue Features mit Risiko dort um eine Prüfung ergänzen.
+- 4.69:
+  - Fehlerbericht-Knopf im Pausemenü jetzt für das Besitzer-Konto ohne Admin-Modus: `ownerAcct()` = `AUTH.token && AUTH.admin` (vom Server bestätigt, keine E-Mail im Spielcode).
+  - 10 deutsche Waffen aus dem 1./2. Weltkrieg (ungewöhnlich–episch): `luger`, `p38`, `mp18` (ungewöhnlich), `mp40`, `kar98k`, `g43`, `drilling` (selten), `stg44`, `mg34`, `tgewehr` (episch). Je Eintrag in `WEAPONS` (mit Geschichtstext), `SIGHTS` (Kimme/Korn, beim Zielen auf die Bildmitte geprüft), `SND`, `ORDER`, `BOX_POOL`, `PAP_NAMES`, `PASCAL_OK`, Modell `modelLuger` … `modelTGewehr` (+ `builders`).
+  - Viktor verkauft nur noch: Revolver, Maschinenpistole, Schrotflinte, Sturmgewehr, Scharfschützengewehr, Armbrust, Flammenwerfer, Kettensäge, Magnum, Luger P08, Karabiner 98k (+ Munition). Alle anderen Waffen stehen als `locked:true` („🔒 MYSTERY BOX“) im Katalog und kommen nur aus der Box.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
