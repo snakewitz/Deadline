@@ -14,7 +14,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === 'OPTIONS') return new Response(null, {headers: CORS});
     if (url.pathname === '/' || url.pathname === '/health') return new Response('Deadline-Relay läuft', {headers: CORS});
-    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname.startsWith('/account') || url.pathname.startsWith('/name/')) return accounts(req, env, url);
+    if (url.pathname.startsWith('/auth/') || url.pathname === '/save' || url.pathname.startsWith('/account') || url.pathname.startsWith('/name/') || url.pathname.startsWith('/board')) return accounts(req, env, url);
     if (url.pathname === '/lobbies') {
       const r = await env.DIR.get(env.DIR.idFromName('dir')).fetch('https://dir/list');
       return new Response(await r.text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
@@ -157,7 +157,20 @@ async function accounts(req, env, url) {
     const taken = (await (await names().fetch('https://n/check?n=' + encodeURIComponent(key))).json()).err === 'taken' || /_guest$/i.test(key);
     return J(taken ? {ok: false, name: guestName(name)} : {ok: true, name});
   }
+  const board = () => env.BOARD.get(env.BOARD.idFromName('board'));
+  if (url.pathname === '/board' && req.method === 'GET') { // öffentliche Rangliste (unsichtbare Spieler werden ausgelassen)
+    const ses = await readSession(env, req), m = (url.searchParams.get('map') || 'all').replace(/[^a-z]/g, '').slice(0, 16) || 'all';
+    return J(await (await board().fetch('https://b/list?map=' + m + (ses ? '&uid=' + ses.u : ''))).json()); }
   const s = await readSession(env, req); if (!s) return J({err: 'login'}, 401);
+  if (url.pathname === '/board/submit' && req.method === 'POST') { // Ergebnis einer Runde (nur mit Nutzernamen)
+    let b; try { b = await req.json(); } catch (e) { return J({err: 'bad_json'}, 400); }
+    const info = await (await acc(s.u).fetch('https://a/info')).json(); if (!info.name) return J({err: 'no_name'}, 400);
+    const map = String(b.map || '').replace(/[^a-z]/g, '').slice(0, 16), w = b.wave | 0, k = b.kills | 0, t = +b.time || 0;
+    if (!map || w < 1 || w > 400 || k < 0 || k > w*150 + 50 || t < w*8 || t > 86400) return J({err: 'implausible'}, 400);   // grobe Plausibilitätsprüfung
+    return J(await (await board().fetch('https://b/submit', {method: 'POST', body: JSON.stringify({uid: s.u, n: info.name, map, w, k, t: Math.round(t), co: b.coop ? 1 : 0})})).json()); }
+  if (url.pathname === '/board/hide' && req.method === 'POST') { let h; try { h = !!(await req.json()).hide; } catch (e) { return J({err: 'bad_json'}, 400); }
+    return J(await (await board().fetch('https://b/hide', {method: 'POST', body: JSON.stringify({uid: s.u, hide: h})})).json()); }
+  if (url.pathname === '/board/me') return J(await (await board().fetch('https://b/me?uid=' + s.u)).json());
   if (url.pathname === '/name/proof') { const info = await (await acc(s.u).fetch('https://a/info')).json(); if (!info.name) return J({err: 'no_name'}, 404);
     const body = b64u(enc.encode(JSON.stringify({n: info.name.toLowerCase(), e: Date.now() + 2*864e5}))); return J({proof: body + '.' + await hmac(env.SESSION_SECRET, 'n:' + body)}); }
   if (url.pathname === '/auth/me') { const info = await (await acc(s.u).fetch('https://a/info')).json(); return J({admin: !!s.a, rev: info.rev, exists: info.exists, name: info.name || ''}); }
@@ -166,14 +179,14 @@ async function accounts(req, env, url) {
     const bad = nameProblem(n); if (bad) return J({err: bad}, 400);
     const r = await names().fetch('https://n/claim', {method: 'POST', body: JSON.stringify({name: n, uid: s.u, adm: !!s.a})}), j = await r.json();
     if (r.status !== 200) return J(j, r.status);
-    await acc(s.u).fetch('https://a/setname', {method: 'POST', body: JSON.stringify({name: n})}); return J({ok: true, name: n});
+    await acc(s.u).fetch('https://a/setname', {method: 'POST', body: JSON.stringify({name: n})}); await board().fetch('https://b/rename', {method: 'POST', body: JSON.stringify({uid: s.u, n})}); return J({ok: true, name: n});
   }
   if (url.pathname === '/save' && req.method === 'GET') return new Response(await (await acc(s.u).fetch('https://a/get')).text(), {headers: {...CORS, 'Content-Type': 'application/json'}});
   if (url.pathname === '/save' && req.method === 'PUT') {
     const txt = await req.text(); if (txt.length > MAX_SAVE) return J({err: 'too_big'}, 413);
     const r = await acc(s.u).fetch('https://a/put', {method: 'POST', body: txt}); return new Response(await r.text(), {status: r.status, headers: {...CORS, 'Content-Type': 'application/json'}});
   }
-  if (url.pathname === '/account' && req.method === 'DELETE') { await names().fetch('https://n/release', {method: 'POST', body: JSON.stringify({uid: s.u})}); await acc(s.u).fetch('https://a/delete', {method: 'POST'}); return J({ok: true}); }
+  if (url.pathname === '/account' && req.method === 'DELETE') { await names().fetch('https://n/release', {method: 'POST', body: JSON.stringify({uid: s.u})}); await board().fetch('https://b/forget', {method: 'POST', body: JSON.stringify({uid: s.u})}); await acc(s.u).fetch('https://a/delete', {method: 'POST'}); return J({ok: true}); }
   return J({err: 'not_found'}, 404);
 }
 export class Account { // ein Durable Object je Konto
@@ -221,6 +234,41 @@ export class Names { // Verzeichnis: name (klein) → Konto; ein einziges Durabl
       await st.put('n:' + key, b.uid); await st.put('u:' + b.uid, key); return J({ok: true});
     }
     if (u.pathname === '/release') { const old = await st.get('u:' + b.uid); if (old) { await st.delete('n:' + old); await st.delete('u:' + b.uid); } return J({ok: true}); }
+    return J({err: 'not_found'}, 404);
+  }
+}
+
+// ================= 4.59: Globale Rangliste =================
+// Ein einziges Durable Object. Je Karte (und „all“ = beste Runde über alle Karten) die 100 besten Spieler – pro Konto nur der beste Eintrag.
+// Gespeichert wird nur: Konto-Kennung (Hash), Nutzername, Karte, Welle, Kills, Spielzeit, Koop ja/nein, Datum. Unsichtbare Spieler (h:<uid>) werden beim Lesen ausgelassen.
+const BOARD_N = 100, better = (a, b) => !b || a.w > b.w || (a.w === b.w && (a.k > b.k || (a.k === b.k && a.t < b.t)));
+export class Board {
+  constructor(state) { this.state = state; }
+  async fetch(req) {
+    const u = new URL(req.url), st = this.state.storage;
+    const top = async m => (await st.get('top:' + m)) || [];
+    if (u.pathname === '/list') { const m = u.searchParams.get('map') || 'all', uid = u.searchParams.get('uid'), list = await top(m), hid = new Set((await st.get('hidden')) || []);
+      const out = list.filter(e => !hid.has(e.u)).slice(0, 50).map((e, i) => ({r: i + 1, n: e.n, w: e.w, k: e.k, t: e.t, m: e.m, co: e.co, at: e.at, me: uid && e.u === uid ? 1 : 0}));
+      return J({map: m, list: out, hidden: uid ? hid.has(uid) : false}); }
+    if (u.pathname === '/me') { const uid = u.searchParams.get('uid'); return J({hide: ((await st.get('hidden')) || []).includes(uid), best: (await st.get('b:' + uid)) || {}}); }
+    const b = await req.json();
+    if (u.pathname === '/submit') {
+      const e = {u: b.uid, n: b.n, w: b.w, k: b.k, t: b.t, co: b.co, m: b.map, at: Date.now()}, mine = (await st.get('b:' + b.uid)) || {}; let rank = 0, best = false;
+      for (const m of [b.map, 'all']) {
+        if (!better(e, mine[m])) continue; best = true; mine[m] = e;
+        const list = (await top(m)).filter(x => x.u !== b.uid); list.push(e); list.sort((x, y) => better(x, y) ? -1 : better(y, x) ? 1 : 0); await st.put('top:' + m, list.slice(0, BOARD_N));
+        if (m === b.map) rank = list.findIndex(x => x.u === b.uid) + 1;
+      }
+      if (best) await st.put('b:' + b.uid, mine);
+      if (!rank) { const list = await top(b.map), i = list.findIndex(x => x.u === b.uid); rank = i >= 0 ? i + 1 : 0; }
+      return J({ok: true, best, rank: rank <= BOARD_N ? rank : 0});
+    }
+    if (u.pathname === '/hide') { const h = new Set((await st.get('hidden')) || []); if (b.hide) h.add(b.uid); else h.delete(b.uid); await st.put('hidden', [...h]); return J({ok: true, hide: !!b.hide}); }
+    if (u.pathname === '/rename' || u.pathname === '/forget') { const mine = (await st.get('b:' + b.uid)) || {};
+      for (const m of Object.keys(mine)) { let list = await top(m); list = u.pathname === '/forget' ? list.filter(x => x.u !== b.uid) : list.map(x => x.u === b.uid ? {...x, n: b.n} : x); await st.put('top:' + m, list); }
+      if (u.pathname === '/forget') { await st.delete('b:' + b.uid); const h = ((await st.get('hidden')) || []).filter(x => x !== b.uid); await st.put('hidden', h); }
+      else { for (const m of Object.keys(mine)) mine[m].n = b.n; await st.put('b:' + b.uid, mine); }
+      return J({ok: true}); }
     return J({err: 'not_found'}, 404);
   }
 }

@@ -30,6 +30,14 @@ class_name = "Names"
 tag = "v3"
 new_sqlite_classes = ["Names"]
 
+[[durable_objects.bindings]]
+name = "BOARD"
+class_name = "Board"
+
+[[migrations]]
+tag = "v4"
+new_sqlite_classes = ["Board"]
+
 [vars]
 # Öffentliche OAuth-Client-ID aus der Google Cloud Console (leer = Anmeldung noch nicht eingerichtet)
 GOOGLE_CLIENT_ID = "985560262568-9p0e4tvf47hltkks3422phuc00nunklc.apps.googleusercontent.com"
