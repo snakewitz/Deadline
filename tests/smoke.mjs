@@ -56,9 +56,9 @@ try {
   for (const id of await S.E('Object.keys(MAPS)')) {
     const st = await startMap(S, id);
     await S.E('C.god = true; breakT = .1; 1'); await sim(S.E, 25);
-    const r = JSON.parse(await S.E(`JSON.stringify({w:wave, z:zombies.length, k:kills, box:BOX_SPOTS.length, mq:!!MQO})`));
+    const r = JSON.parse(await S.E(`JSON.stringify({w:wave, z:zombies.length, k:kills, box:BOX_SPOTS.length, mq:!!MQO, ped:!MQO || !MQO.ped || !MQO.ped.col || MQO.ped.col.minX > 9000})`));
     await S.E('for (const z of [...zombies]) damageZombie(z, 1e9, z.g.position.clone().setY(1)); 1'); await sim(S.E, 2);
-    ok(`Karte ${id}`, st === 'playing' && r.w >= 1 && (r.z > 0 || r.k > 0) && r.box === 6 && r.mq, `Welle ${r.w}, ${r.z} Zombies, ${r.box} Box-Plätze`);
+    ok(`Karte ${id}`, st === 'playing' && r.w >= 1 && (r.z > 0 || r.k > 0) && r.box === 6 && r.mq && r.ped, `Welle ${r.w}, ${r.z} Zombies, ${r.box} Box-Plätze${r.ped ? '' : ', UNSICHTBARER SOCKEL-BLOCK'}`);
     if (id === 'theater') {
       await S.E('for (const D of DOORS) if (!D.open) thOpenDoor(D, 0, true); 1'); await sim(S.E, 6);
       const stuck = await S.E('zombies.filter(z => z.win < 0 && !thOpenAt(z.g.position.x, z.g.position.z, 0)).length');

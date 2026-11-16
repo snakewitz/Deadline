@@ -172,6 +172,13 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   - Regeneration (`s3`): 0,7 / 1,3 / 2 Leben/s erst nach 6 s ohne Treffer (vorher bis 3/s nach 4 s).
   - Elite-Parade: `SPR.el` = 5 + 2 je Mitspieler Eliten plus 10 Begleiter (Brecher/Gepanzerte/Läufer/Kreischer), Takt 1,6 s.
   - Protokoll: FPS nur aus Spielzeit (Menüs zählen nicht), `balGear` Munition roh `[Magazin, Reserve, max. Magazin, max. Reserve]`, Upgrades als Kopie, neue Ereignisse `upgrade` ([Waffe, Art, Stufe, Kosten, Rest-Schrott]) und `pflicht` (Waffenpflicht). Hinweis: In der ausgewerteten 4.73-Runde standen Box-Waffen schon ab Welle 3 auf vollen Upgrades, ohne Admin – Ursache bisher nicht gefunden, mit den neuen Ereignissen prüfen.
+- 4.78:
+  - Decken: `ceilAt(x, z)` (Goldene Maske = Raumhöhe `y + h` aus `TH_ROOMS`, Schloss innerhalb ±39,1 = 7 m, sonst offen); beim Steigen wird der Spieler unter der Decke gestoppt (Supersprung/Mondschwerkraft). Neue überdachte Bereiche dort eintragen.
+  - Unsichtbarer Block: Der Wunderwaffen-Sockel (`MQO.ped`) hatte seinen Kollisionsblock schon vor dem Quest-Ende – jetzt `ped.col` liegt bis zur Freischaltung bei x 9999 (Schnelltest prüft das). Fundmethode: je Hindernis 4 waagerechte Strahlen gegen alle sichtbaren Meshes (Fehlalarme bei dünnen Objekten/Bühnenhöhe möglich, dann von oben gegenprüfen).
+  - Pausemenü zeigt für Besitzer/Admin die Position (`#posInfo`).
+  - Mündungslicht beim Zielen ×0,15 (`aimK`); `aimFade`: beim Zielen alles außer `#mini` ausgeblendet.
+  - Skillbaum 4 Spalten (`ars` Arsenal: a1–a9), je Spalte neue Wahl-Stufe 4 (`k7/k8`, `s7/s8`, `t7/t8`, `a7/a8`, Gruppe `x:'*4'`), Ultimative brauchen jetzt Stufe 4, Meister-Fähigkeit `cap:true` (max 5: `k9` +2 % Schaden, `s9` +4 Leben, `t9` −2 % Händlerpreise, `a9` −2 % Nachladen/+1 % Feuerrate). Max. 72 Punkte in einem Build (vorher 30). Effekte über `eff()` (Schaden/Streuung/Rückstoß/Magazin) bzw. lokal (Medipack, Kopfschuss-Heilung, Kugelhagel `killRush`, Power-up-Dauer, Munitionskisten, Preise). XP ×1,15 in `gainXP`.
+  - Spezialrunde `spider` „Spinnenplage“: 50 Spinnen mit 40 % Leben, springen ×1,8 / Netze ×3 seltener, Geld ×0,3 (Serie ×0,1); immer die zweite Spezialrunde.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
