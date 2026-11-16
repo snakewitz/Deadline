@@ -51,6 +51,8 @@ try {
   // ---------- Einzelspieler: alle Karten ----------
   const S = await open('', 'SP'); await W(1500); await S.p.mouse.click(400, 240); await W(800);
   ok('Hauptmenü lädt', await S.E(`state === 'menu' && !!$('startBtn')`), 'Version ' + await S.E('GAME_VER'));
+  const wbad = await S.E(`ORDER.filter(k => !WEAPONS[k] || !models[k] || (!WEAPONS[k].melee && WEAPONS[k].mag && SIGHTS[k] && !SIGHTS[k].iron)).join(', ')`);
+  ok('Alle Waffen haben Werte, Modell und Visier', !wbad, wbad);
   for (const id of await S.E('Object.keys(MAPS)')) {
     const st = await startMap(S, id);
     await S.E('C.god = true; breakT = .1; 1'); await sim(S.E, 25);
