@@ -120,6 +120,15 @@ try {
   for (let i = 0; i < 6; i++) { await sim(H.E, 1); await W(300); }
   await H.E('breakT = .1; 1'); for (let i = 0; i < 4; i++) { await sim(H.E, 1); await W(400); }
   ok('Koop: Spezialrunde läuft auch beim Gast', await H.E(`SPR.cur`) === 'run' && await G.E(`SPR.cur`) === 'run');
+  // 4.84: Geld an Mitspieler geben, Perk behalten beim Zu-Boden-Gehen, stärkere Zwischenbosse
+  const g0 = await G.E('Math.floor(score)');
+  const hs = await H.E(`(() => { const P = [...NET.pl.values()][0]; player.pos.x = P.rp.x + 1; player.pos.z = P.rp.z; score = 2000; NET.gmT = 0; netGiveMoney(); return score; })()`); await W(2500);
+  const g1 = await G.E('Math.floor(score)');
+  ok('Koop: Geld an Mitspieler geben (Y)', hs === 1500 && g1 - g0 === 500, `Host ${hs}, Gast +${g1 - g0}`);
+  const pk = await G.E(`(() => { C.god = false; perks.speed = true; perks.rof = true; lastPerk = 'rof'; netDown(); const r = !!perks.rof && !perks.speed; netUp(100); C.god = true; return r; })()`);
+  ok('Koop: am Boden bleibt der zuletzt gekaufte Perk', pk);
+  const bh = await H.E(`(() => { spawnZombie('boss'); const b = zombies.find(z => z.bossKind === curMap.id); if (!b) return 0; const r = b.maxHp/(zHp*b.T.hp); damageZombie(b, 1e9, b.g.position.clone().setY(1)); return +r.toFixed(2); })()`);
+  ok('Koop: Zwischenboss hat mehr Leben (×1,8 · Koop-Zuschlag)', bh >= 2, `Faktor ${bh}`);
 } catch (e) { ok('Testlauf ohne Absturz', false, e.message.split('\n')[0]); }
 
 await browser.close(); srv.close();
