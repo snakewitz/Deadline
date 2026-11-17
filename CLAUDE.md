@@ -199,6 +199,7 @@ Live über GitHub Pages: https://snakewitz.github.io/Deadline/ (Push auf `main` 
   - Schmiede kann jetzt auf Stockwerken stehen (`forgeAt[2]` = Ausrichtung, `forge.y` = `gyAt`, `nearForge` prüft die Höhe).
   - Wetter: im Kuro-Distrikt meist Regen (`wxWave`), kein Tag/Nacht. Musik vorerst Neon-Beach-Playlist (`SONGS.cyber = SONGS.vice`). Minikarte zeichnet Ebenen (heller = höher) und Treppen (`mini.cyber`). Funkspruch `EGG_STORY.cyber`. Zombies, Bosse und Hauptquest für die Karte folgen.
   - Schnelltest: Karten ohne Hauptquest gelten als ok (`!MQD[curMap.id]`).
+- 4.86 (Auswertung Frostnacht solo 4.84): Gegner-Schaden ab Welle 12 +3 % pro Welle (`waveDmgMul`, max. ×2, in `hurt` – wirkt einmal beim Getroffenen, auch für Gäste). Zwischenbosse Grundwert ×2,5 statt ×1,8. Schmiede Stufe II kostet 15.000. Perk-Stufe II (`perks2`, `PERK2`, `perk2Price` = 10.000 mit Perk-Rabatten): am Automaten mit gekauftem Perk erneut E – Panzerhaut −50 %, Sprinter +40 %, Schnellhand −50 % Nachladen, Doppelfeuer Takt ×0,7, Waffengurt +50 % Reserve (`eff`), Zweite Chance II = zweite Ladung (`doRevive` verbraucht erst die II). Am Boden geht II mit dem Perk verloren (außer `lastPerk`), Rejoin speichert `pk2`, `pk`-Nachricht trägt `l2`. HUD-Symbol mit „II“.
 - Testversion 4.1 liegt unter `alt/beta-4.1.html` (nur Einzelspieler-Vergleich).
 
 ## Cheat-/Admin-Passwort
