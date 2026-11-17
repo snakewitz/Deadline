@@ -59,6 +59,17 @@ try {
     const r = JSON.parse(await S.E(`JSON.stringify({w:wave, z:zombies.length, k:kills, box:BOX_SPOTS.length, mq:!!MQO || !MQD[curMap.id], ped:!MQO || !MQO.ped || !MQO.ped.col || MQO.ped.col.minX > 9000})`));
     await S.E('for (const z of [...zombies]) damageZombie(z, 1e9, z.g.position.clone().setY(1)); 1'); await sim(S.E, 2);
     ok(`Karte ${id}`, st === 'playing' && r.w >= 1 && (r.z > 0 || r.k > 0) && r.box === 6 && r.mq && r.ped, `Welle ${r.w}, ${r.z} Zombies, ${r.box} Box-Plätze${r.ped ? '' : ', UNSICHTBARER SOCKEL-BLOCK'}`);
+    if (id === 'cyber') {   // 4.87: echte Ebenen – alle Ebenen erreichbar, Platzierungen auf festem Boden, Sturz in den Abgrund tötet
+      const r3 = JSON.parse(await S.E(`(() => { const g = nvNode(0, 6, 0); computeFlow3(0, [g]); const d = (x, z, y) => { const u = nvNode(x, z, y); return u >= 0 && NV.dist[0][u] < Infinity; };
+        const lv = [[0, -55, 7], [0, 50, 0], [0, 60, 7], [-57, 0, 14], [54, 0, 14], [0, 0, 14], [46, -30.5, 14], [-46, 61, 14]].filter(([x, z, y]) => !d(x, z, y)).map(q => q.join('/'));
+        const sp = CY_SPAWNS.filter(([x, z, y]) => !d(x, z, y)).map(q => q.join('/'));
+        const pl = [...Object.entries(curMap.perkAt).map(([k, v]) => [k, v[0], v[1], v[3]]), ...curMap.marketSpots.map((v, i) => ['stand' + i, v[0], v[1], null]), ...curMap.boxSpots.map((v, i) => ['box' + i, v[0], v[1], 0])]
+          .filter(([k, x, z, y]) => { const g = gyAt(x, z, (y ?? 20) + .5); return g < -1 || (y !== null && Math.abs(g - y) > .05); }).map(q => q[0]);
+        return JSON.stringify({lv, sp, pl}); })()`));
+      ok('Kuro-Distrikt: alle Ebenen und Spawnpunkte erreichbar, alles steht auf festem Boden', !r3.lv.length && !r3.sp.length && !r3.pl.length, JSON.stringify(r3));
+      const fall = await S.E(`(() => { C.god = false; const s0 = state; player.pos.set(24, 0, 10); player.y = 0; player.vy = 0; for (let i = 0; i < 240 && state === 'playing'; i++) update(1/60); const r = state + '/' + lastCause; if (state === 'over') { showMenu && showMenu(); } return r; })()`);
+      ok('Kuro-Distrikt: Sturz in den Abgrund beendet die Runde', fall === 'over/abgrund', fall);
+    }
     if (id === 'theater') {
       await S.E('for (const D of DOORS) if (!D.open) thOpenDoor(D, 0, true); 1'); await sim(S.E, 6);
       const stuck = await S.E('zombies.filter(z => z.win < 0 && !thOpenAt(z.g.position.x, z.g.position.z, 0)).length');
