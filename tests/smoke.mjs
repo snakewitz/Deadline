@@ -67,6 +67,13 @@ try {
           .filter(([k, x, z, y]) => { const g = gyAt(x, z, (y ?? 20) + .5); return g < -1 || (y !== null && Math.abs(g - y) > .05); }).map(q => q[0]);
         return JSON.stringify({lv, sp, pl}); })()`));
       ok('Kuro-Distrikt: alle Ebenen und Spawnpunkte erreichbar, alles steht auf festem Boden', !r3.lv.length && !r3.sp.length && !r3.pl.length, JSON.stringify(r3));
+      const tr = JSON.parse(await S.E(`(() => { /* 5.4: Ringbahn – Bahnsteigtür hält ohne Zug, einsteigen in Nord, mitfahren, in Ost aussteigen */
+        C.god = true; const walk = (q, lz) => { for (let i = 0; i < 40; i++) { const w = trnWorld(q, 2.8, lz), dx = w.x - player.pos.x, dz = w.z - player.pos.z, l = Math.hypot(dx, dz); if (l > .1) { player.pos.x += dx/l*Math.min(l, .2); player.pos.z += dz/l*Math.min(l, .2); } health = 100; update(.05); } };
+        const q = trnPose(TRN.st[0]), a = trnWorld(q, 2.8, 3.2); TRN.t = TRN.legs[2].t0 + 3; update(.05); player.pos.set(a.x, 0, a.z); player.y = 7; player.vy = 0; walk(q, 0); const blocked = !TRN.ride && player.y > 6.5 && trnLocal(q, player.pos.x, player.pos.z).lz > 2.3;
+        TRN.t = TRN.legs[0].t0 + 2; update(.05); walk(q, 0); const board = !!TRN.ride; let n = 0; while (!(TRN.S.st === 1 && TRN.S.open) && n++ < 900) { health = 100; update(.05); }
+        walk(trnPose(TRN.st[1]), 3.4); for (let i = 0; i < 40; i++) { health = 100; update(.05); } const out = !TRN.ride && Math.abs(player.y - 14) < .1 && state === 'playing';
+        C.god = false; return JSON.stringify({blocked, board, out, y:+player.y.toFixed(1)}); })()`));
+      ok('Kuro-Distrikt: Ringbahn – Bahnsteigtür, einsteigen, mitfahren, aussteigen', tr.blocked && tr.board && tr.out, JSON.stringify(tr));
       const q5 = JSON.parse(await S.E(`(() => { /* 5.3: Hauptquest-Objekte auf festem Boden, NULL fliegt per Jetpack, Kühlrippen öffnen den Kern, Peitsche schneidet */
         const pos = [...MQO.rel, ...MQO.sw, ...MQO.hk, {x:MQO.c.x, z:MQO.c.z, y:0}].filter(q => Math.abs(gyAt(q.x, q.z, q.y + .3) - q.y) > .05).length;
         for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; toSpawn = 0; C.god = true; player.pos.set(-10, 0, -10); player.y = 0; mqAdmin('mqboss'); let maxY = 0, b = null;
