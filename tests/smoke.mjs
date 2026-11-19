@@ -79,8 +79,11 @@ try {
         for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; toSpawn = 0; C.god = true; player.pos.set(0, 0, 0); player.y = 0;
         for (const [x, zz, y] of [[46, -24, 14], [-22, 46, 7], [-46, 22, 14], [10, -47, 7], [54, 10, 14]]) { spawnOverride = {x, z:zz, y}; spawnZombie('normal'); spawnOverride = null; const z = zombies[zombies.length - 1]; z.rise = 0; z.fy = y; z.g.position.y = y; }
         let minY = 0, air = 0; for (let i = 0; i < 700; i++) { health = 100; update(.05); for (const z of zombies) { minY = Math.min(minY, z.fy || 0); air = Math.max(air, z.airY || 0); } }
-        for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; C.god = false; return JSON.stringify({on, off, got, minY:+minY.toFixed(1), air:+air.toFixed(2)}); })()`));
-      ok('Kuro-Distrikt: Kuro-Waffen nur hier in der Box, Zombies springen übers Geländer, keiner fällt in den Abgrund', cw.on && cw.off && cw.got > 10 && cw.minY > -1 && cw.air > .8, JSON.stringify(cw));
+        for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; const fm = F.mapBoss, w0 = wave; F.mapBoss = true; wave = 5; spawnOverride = {x:54, z:10, y:14}; spawnZombie('boss'); spawnOverride = null;
+        const b = zombies[zombies.length - 1]; b.rise = 0; b.fy = 14; b.g.position.y = 14; let leap = 0; for (let i = 0; i < 300; i++) { health = 100; player.pos.set(0, 0, 12); player.y = 0; update(.05); if (b.lp) leap = 1; }
+        const psy = leap && Math.abs((b.fy || 0)) < .2; F.mapBoss = fm; wave = w0;
+        for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; C.god = false; return JSON.stringify({on, off, got, minY:+minY.toFixed(1), air:+air.toFixed(2), psy}); })()`));
+      ok('Kuro-Distrikt: Kuro-Waffen nur hier in der Box, Zombies springen übers Geländer, keiner fällt in den Abgrund, Cyberpsycho springt zwischen Ebenen', cw.on && cw.off && cw.got > 10 && cw.minY > -1 && cw.air > .8 && cw.psy, JSON.stringify(cw));
       const q5 = JSON.parse(await S.E(`(() => { /* 5.3: Hauptquest-Objekte auf festem Boden, NULL fliegt per Jetpack, Kühlrippen öffnen den Kern, Peitsche schneidet */
         const pos = [...MQO.rel, ...MQO.sw, ...MQO.hk, {x:MQO.c.x, z:MQO.c.z, y:0}].filter(q => Math.abs(gyAt(q.x, q.z, q.y + .3) - q.y) > .05).length;
         for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; toSpawn = 0; C.god = true; player.pos.set(-10, 0, -10); player.y = 0; mqAdmin('mqboss'); let maxY = 0, b = null;
@@ -90,8 +93,8 @@ try {
         update(.05); const core = MQS.bp === 2;
         for (let i = 0; i < 4; i++) { spawnOverride = {x:-10 + (i - 1.5)*1.2, z:-14.5, y:0}; spawnZombie('normal'); spawnOverride = null; const z = zombies[zombies.length - 1]; z.rise = 0; z.speed = 0; }
         owned.wwhip = true; equip('wwhip'); player.pos.set(-10, 0, -11); player.yaw = 0; player.pitch = 0; for (let i = 0; i < 12; i++) update(.05); const n0 = zombies.filter(z => !z.bossKind).length; startMelee(false); for (let i = 0; i < 12; i++) update(.05);
-        const cut = n0 - zombies.filter(z => !z.bossKind).length; mqAdmin('mqwin'); update(.05); C.god = false; return JSON.stringify({pos, boss:true, maxY:+maxY.toFixed(1), core, cut, done:MQS.done}); })()`));
-      ok('Kuro-Distrikt: Hauptquest – Objekte stehen fest, NULL fliegt, Kühlrippen öffnen den Kern, Peitsche schneidet', !q5.pos && q5.boss && q5.maxY > 10 && q5.core && q5.cut >= 3 && q5.done, JSON.stringify(q5));
+        const cut = n0 - zombies.filter(z => !z.bossKind).length; const nb = zombies.find(z => z.bossKind === 'qb_cyber'); applyPower('nuke'); const nuke = !!nb && zombies.includes(nb); mqAdmin('mqwin'); update(.05); C.god = false; return JSON.stringify({pos, boss:true, maxY:+maxY.toFixed(1), core, cut, nuke, done:MQS.done}); })()`));
+      ok('Kuro-Distrikt: Hauptquest – Objekte stehen fest, NULL fliegt, Kühlrippen öffnen den Kern, Peitsche schneidet, Atombombe lässt ihn stehen', !q5.pos && q5.boss && q5.maxY > 10 && q5.core && q5.cut >= 3 && q5.nuke && q5.done, JSON.stringify(q5));
       const fall = await S.E(`(() => { C.god = false; const s0 = state; player.pos.set(24, 0, 10); player.y = 0; player.vy = 0; for (let i = 0; i < 240 && state === 'playing'; i++) update(1/60); const r = state + '/' + lastCause; if (state === 'over') { showMenu && showMenu(); } return r; })()`);
       ok('Kuro-Distrikt: Sturz in den Abgrund beendet die Runde', fall === 'over/abgrund', fall);
     }
