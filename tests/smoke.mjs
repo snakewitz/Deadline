@@ -74,6 +74,13 @@ try {
         walk(trnPose(TRN.st[1]), 3.4); for (let i = 0; i < 40; i++) { health = 100; update(.05); } const out = !TRN.ride && Math.abs(player.y - 14) < .1 && state === 'playing';
         C.god = false; return JSON.stringify({blocked, board, out, y:+player.y.toFixed(1)}); })()`));
       ok('Kuro-Distrikt: Ringbahn – Bahnsteigtür, einsteigen, mitfahren, aussteigen', tr.blocked && tr.board && tr.out, JSON.stringify(tr));
+      const cw = JSON.parse(await S.E(`(() => { /* 5.5: Kuro-Waffen nur hier in der Box · Zombies springen nie in den Abgrund */
+        const on = CY_WEAPONS.every(wMapOk), cm = curMap; curMap = MAPS.friedhof; const off = !CY_WEAPONS.some(wMapOk); curMap = cm; let got = 0; for (let i = 0; i < 400; i++) if (CY_WEAPONS.includes(boxRoll())) got++;
+        for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; toSpawn = 0; C.god = true; player.pos.set(0, 0, 0); player.y = 0;
+        for (const [x, zz, y] of [[46, -24, 14], [-22, 46, 7], [-46, 22, 14], [10, -47, 7], [54, 10, 14]]) { spawnOverride = {x, z:zz, y}; spawnZombie('normal'); spawnOverride = null; const z = zombies[zombies.length - 1]; z.rise = 0; z.fy = y; z.g.position.y = y; }
+        let minY = 0, air = 0; for (let i = 0; i < 700; i++) { health = 100; update(.05); for (const z of zombies) { minY = Math.min(minY, z.fy || 0); air = Math.max(air, z.airY || 0); } }
+        for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; C.god = false; return JSON.stringify({on, off, got, minY:+minY.toFixed(1), air:+air.toFixed(2)}); })()`));
+      ok('Kuro-Distrikt: Kuro-Waffen nur hier in der Box, Zombies springen übers Geländer, keiner fällt in den Abgrund', cw.on && cw.off && cw.got > 10 && cw.minY > -1 && cw.air > .8, JSON.stringify(cw));
       const q5 = JSON.parse(await S.E(`(() => { /* 5.3: Hauptquest-Objekte auf festem Boden, NULL fliegt per Jetpack, Kühlrippen öffnen den Kern, Peitsche schneidet */
         const pos = [...MQO.rel, ...MQO.sw, ...MQO.hk, {x:MQO.c.x, z:MQO.c.z, y:0}].filter(q => Math.abs(gyAt(q.x, q.z, q.y + .3) - q.y) > .05).length;
         for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; toSpawn = 0; C.god = true; player.pos.set(-10, 0, -10); player.y = 0; mqAdmin('mqboss'); let maxY = 0, b = null;
