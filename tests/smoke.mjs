@@ -89,7 +89,7 @@ try {
         for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; toSpawn = 0; C.god = true; player.pos.set(-10, 0, -10); player.y = 0; mqAdmin('mqboss'); let maxY = 0, b = null;
         for (let i = 0; i < 160; i++) { update(.05); b = zombies.find(z => z.bossKind === 'qb_cyber'); if (b) maxY = Math.max(maxY, b.fy || 0); }
         if (!b) return JSON.stringify({pos, boss:false}); b.fl = null; b.fly = false; b.act = null; b.keepAct = false; MQS.bp = 0; MQS.it = [1, 1, 1];
-        b.g.updateMatrixWorld(true); const bms = []; b.g.traverse(o => { if (o.isMesh) bms.push(o); }); const rc = new THREE.Raycaster(), bp0 = b.g.position, bry = b.g.rotation.y, from = V(bp0.x + Math.sin(bry)*9, (b.fy || 0) + 1.7, bp0.z + Math.cos(bry)*9);
+        for (const ar of b.arms) ar.rotation.set(0, 0, 0); b.g.updateMatrixWorld(true); const bms = [];   /* Arme in Grundstellung (in Angriffsposen kann ein Arm kurz vor einer Schulter-Rippe hängen) */ b.g.traverse(o => { if (o.isMesh) bms.push(o); }); const rc = new THREE.Raycaster(), bp0 = b.g.position, bry = b.g.rotation.y, from = V(bp0.x + Math.sin(bry)*9, (b.fy || 0) + 1.7, bp0.z + Math.cos(bry)*9);
         const front = b.vents.every(v => { const w = b.g.localToWorld(v.p.clone()); rc.set(from, w.clone().sub(from).normalize()); const h = rc.intersectObjects(bms, false)[0]; return h && h.point.distanceTo(w) < .5; });   /* 5.10: Kühlrippen von vorn treffbar */
         for (let i = 0; i < 3; i++) for (let n = 0; n < 60 && MQS.it[i] > 0; n++) { b.g.updateMatrixWorld(true); damageZombie(b, 300, b.g.localToWorld(b.vents[i].p.clone()), false); }
         update(.05); const core = MQS.bp === 2;
@@ -97,6 +97,15 @@ try {
         owned.wwhip = true; equip('wwhip'); player.pos.set(-10, 0, -11); player.yaw = 0; player.pitch = 0; for (let i = 0; i < 12; i++) update(.05); const n0 = zombies.filter(z => !z.bossKind).length; startMelee(false); for (let i = 0; i < 12; i++) update(.05);
         const cut = n0 - zombies.filter(z => !z.bossKind).length; const nb = zombies.find(z => z.bossKind === 'qb_cyber'); applyPower('nuke'); const nuke = !!nb && zombies.includes(nb); mqAdmin('mqwin'); update(.05); C.god = false; return JSON.stringify({pos, boss:true, maxY:+maxY.toFixed(1), front, core, cut, nuke, done:MQS.done}); })()`));
       ok('Kuro-Distrikt: Hauptquest – Objekte stehen fest, NULL fliegt, Kühlrippen von vorn treffbar und öffnen den Kern, Peitsche schneidet, Atombombe lässt ihn stehen', !q5.pos && q5.boss && q5.maxY > 10 && q5.front && q5.core && q5.cut >= 3 && q5.nuke && q5.done, JSON.stringify(q5));
+      const hk = JSON.parse(await S.E(`(() => { /* 5.11: Henker (Kettenreaktion, Wucht) + Zombie von 14 m kommt ohne Sicherheitsnetz herunter */
+        const clear = () => { for (const z of [...zombies]) removeZombieMesh(z); zombies.length = 0; }; C.god = true; toSpawn = 0; waveState = 'active';
+        const mk = (ty, x, z, y, hp) => { spawnOverride = {x, z, y}; spawnZombie(ty); spawnOverride = null; const o = zombies[zombies.length - 1]; o.rise = 0; o.fy = y; if (hp) o.hp = o.maxHp = hp; return o; };
+        const w = eff('henker'); clear(); const a = mk('normal', 0, 0, 0, 100); for (let i = 0; i < 4; i++) mk('normal', Math.cos(i*1.57)*2, Math.sin(i*1.57)*2, 0, w.dmg*.4); for (const z of zombies) z.speed = 0;
+        player.pos.set(0, 0, 14); player.y = 0; henkerHit(a, w, a.g.position.clone().setY(1.2), false, null); const chain = zombies.length === 0;
+        clear(); const b = mk('brute', 0, 0, 0, 1e5); b.speed = 0; const p0 = b.g.position.clone(); henkerHit(b, w, p0.clone().add(V(0, 1.2, .5)), false, null); const knock = b.g.position.distanceTo(p0) > .5;
+        clear(); ZST.t = 1e9; const z = mk('normal', -28.6, -45, 14); z.speed = 3; let t = 0, down = false; while (t < 40 && !down) { player.pos.set(-30.5, 0, -46); player.y = 0; health = 100; update(.05); t += .05; const p = z.g.position; down = Math.hypot(p.x + 30.5, p.z + 46) < 2.5 && (z.fy || 0) < 1; }
+        ZST.t = 1; clear(); C.god = false; return JSON.stringify({chain, knock, down, t:+t.toFixed(1)}); })()`));
+      ok('Kuro-Distrikt: Henker (Kettenreaktion, Wucht), Zombie springt von 14 m sauber herunter', hk.chain && hk.knock && hk.down, JSON.stringify(hk));
       const fall = await S.E(`(() => { C.god = false; const s0 = state; player.pos.set(24, 0, 10); player.y = 0; player.vy = 0; for (let i = 0; i < 240 && state === 'playing'; i++) update(1/60); const r = state + '/' + lastCause; if (state === 'over') { showMenu && showMenu(); } return r; })()`);
       ok('Kuro-Distrikt: Sturz in den Abgrund beendet die Runde', fall === 'over/abgrund', fall);
     }
